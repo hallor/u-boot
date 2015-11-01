@@ -618,6 +618,14 @@ config TARGET_HIKEY
 	  Support for HiKey 96boards platform. It features a HI6220
 	  SoC, with 8xA53 CPU, mali450 gpu, and 1GB RAM.
 
+config TARGET_DRAGONBOARD
+	bool "Support DragonBoard 96boards Consumer Edition Platform"
+	select ARM64
+	select MSM_SERIAL
+	  help
+	  Support for DragonBoard 96boards platform. It features a APQ8016
+	  SoC, with 4xA53 CPU, Adreno306 gpu, and 1GB RAM.
+
 config TARGET_LS1021AQDS
 	bool "Support ls1021aqds"
 	select CPU_V7
@@ -767,6 +775,7 @@ source "board/freescale/vf610twr/Kconfig"
 source "board/gumstix/pepper/Kconfig"
 source "board/h2200/Kconfig"
 source "board/hisilicon/hikey/Kconfig"
+source "board/qcom/dragonboard/Kconfig"
 source "board/imx31_phycore/Kconfig"
 source "board/isee/igep0033/Kconfig"
 source "board/maxbcm/Kconfig"
