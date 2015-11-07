@@ -139,6 +139,7 @@ serial_initfunc(mpc8260_scc_serial_initialize);
 serial_initfunc(mpc8260_smc_serial_initialize);
 serial_initfunc(mpc85xx_serial_initialize);
 serial_initfunc(mpc8xx_serial_initialize);
+serial_initfunc(msm_serial_initialize);
 serial_initfunc(mxc_serial_initialize);
 serial_initfunc(mxs_auart_initialize);
 serial_initfunc(ns16550_serial_initialize);
@@ -230,6 +231,7 @@ void serial_initialize(void)
 	mpc8260_smc_serial_initialize();
 	mpc85xx_serial_initialize();
 	mpc8xx_serial_initialize();
+	msm_serial_initialize();
 	mxc_serial_initialize();
 	mxs_auart_initialize();
 	ns16550_serial_initialize();

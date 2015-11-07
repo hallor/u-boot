@@ -194,6 +194,7 @@ void mpc8260_scc_serial_initialize(void);
 void mpc8260_smc_serial_initialize(void);
 void mpc85xx_serial_initialize(void);
 void mpc8xx_serial_initialize(void);
+void msm_serial_initialize(void);
 void mxc_serial_initialize(void);
 void mxs_auart_initialize(void);
 void ns16550_serial_initialize(void);
