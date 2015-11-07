@@ -18,3 +18,4 @@ obj-y	+= transition.o
 obj-$(CONFIG_FSL_LAYERSCAPE) += fsl-layerscape/
 obj-$(CONFIG_ARCH_ZYNQMP) += zynqmp/
 obj-$(CONFIG_TARGET_HIKEY) += hisilicon/
+obj-$(CONFIG_TARGET_DRAGONBOARD) += qcom/
