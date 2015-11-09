@@ -104,6 +104,8 @@
 #define CONFIG_CMD_TIMER
 #define CONFIG_CMD_UNZIP
 #define CONFIG_CMD_USB
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_BOOTI
 
 /* Command line configuration */
 #define CONFIG_MENU
