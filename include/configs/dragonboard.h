@@ -145,7 +145,13 @@
 	"test=run test_mmc && run test_network && reset\0" \
 	"boot_part_start=0x00060820\0" \
 	"boot_max_size_blk=0x400\0" \
-	"boot_max_size=0x100000\0"
+	"boot_max_size=0x100000\0" \
+	"linux_image=dragonboard/Image\0" \
+	"fdt_image=dragonboard/apq8016-sbc.dtb\0" \
+	"linux_addr=0x81000000\0"\
+	"fdt_addr=0x83000000\0"\
+	"boot_linux=usb start && tftp $liunx_addr $linux_image && "\
+	  "tftp $fdt_addr $fdt_image && usb stop && booti $linux_addr - $fdt_addr\0"
 
 #define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_SIZE		0x1000
