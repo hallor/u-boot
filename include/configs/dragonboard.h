@@ -161,21 +161,28 @@ REFLASH(dragonboard/u-boot.img,8)\
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"reflash="CONFIG_ENV_REFLASH"\0"\
 	"loadaddr=0x81000000\0" \
-	"dl_uboot=usb start && tftp $loadaddr dragonboard/u-boot.img && usb stop;\0"\
-	"dl_kernel=usb start && tftp $loadaddr dragonboard/linux.itb && usb stop;\0"\
-	"test_mmc_load=mmc read $loadaddr 0 1000\0" \
-	"test_mmc=mmc dev 0  && mmc info && run test_mmc_load && mmc dev 1 && mmc info && run test_mmc_load\0" \
-	"test_network=usb start && dhcp; usb stop\0" \
-	"test=run test_mmc && run test_network && reset\0" \
-	"boot_part_start=0x00060820\0" \
-	"boot_max_size_blk=0x400\0" \
-	"boot_max_size=0x100000\0" \
 	"linux_image=dragonboard/Image\0" \
-	"fdt_image=dragonboard/apq8016-sbc.dtb\0" \
 	"linux_addr=0x81000000\0"\
+	"fdt_image=dragonboard/apq8016-sbc.dtb\0" \
 	"fdt_addr=0x83000000\0"\
-	"boot_linux=usb start && tftp $liunx_addr $linux_image && "\
-	  "tftp $fdt_addr $fdt_image && usb stop && booti $linux_addr - $fdt_addr\0"
+	"ramdisk_addr=0x84000000\0"\
+	"ramdisk_image=dragonboard/initrd.img\0" \
+	"dl_uboot=tftp $loadaddr dragonboard/u-boot.img\0"\
+	"dl_kernel=tftp $linux_addr $linux_image " \
+		"&& tftp $fdt_addr $fdt_image\0"\
+	"dl_ramdisk=tftp $ramdisk_addr $ramdisk_image\0"\
+	"nboot_nord=usb start && run dl_kernel && usb stop && booti $linux_addr - $fdt_addr\0"\
+	"nboot_rd=usb start && run dl_kernel && run dl_ramdisk && booti $linux_addr $ramdisk_addr $fdt_addr\0"\
+	"test_network=usb start && dhcp; usb stop\0" \
+	"test_mmc=mmc dev 0 && mmc erase 71020 1 && mmc write 0xBD956000 71020 1"\
+		"&& mmc read $fdt_addr 71020 1 && cmp.b 0xBD956000 $fdt_addr 200\0"\
+	"test_sd=mmc dev 1 && mmc erase 61460 1 && mmc write 0xBD956000 61460 1"\
+		"&& mmc read $fdt_addr 61460 1 && cmp.b 0xBD956000 $fdt_addr 200\0" \
+	"test_sdm=mmc dev 1 && mmc erase 61460 8 && mmc write 0xBD956000 61460 8"\
+		"&& mmc read $fdt_addr 61460 8 && cmp.b 0xBD956000 $fdt_addr 1000\0"\
+	"test=run test_mmc && run test_sd && run test_sdm && run test_network && reset\0" \
+	"time_mmc=mmc dev 0; timer start; mmc read $loadaddr 0 5000; timer get\0"\
+	"time_sd=mmc dev 1; timer start; mmc read $loadaddr 0 5000; timer get\0"\
 
 #define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_SIZE		0x1000
