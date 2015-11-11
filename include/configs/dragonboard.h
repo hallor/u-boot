@@ -134,8 +134,32 @@
 #define CONFIG_BOOTFILE "dragonboard/linux.itb"
 #define CONFIG_BOOTCOMMAND "usb start && tftp && usb stop && bootm"
 
+/* Does what recovery does */
+#define REFLASH(file, part) \
+"part start mmc 0 "#part" start && "\
+"part size mmc 0 "#part" size && "\
+"tftp $loadaddr "#file" &&" \
+"mmc write $loadaddr $start $size &&"
+
+
+#define CONFIG_ENV_REFLASH \
+"mmc dev 0 &&"\
+"usb start &&"\
+"tftp $loadaddr dragonboard/rescue/gpt_both0.bin && mmc write $loadaddr 0 64 &&"\
+REFLASH(dragonboard/rescue/NON-HLOS.bin,1)\
+REFLASH(dragonboard/rescue/sbl1.mbn,2)\
+REFLASH(dragonboard/rescue/rpm.mbn,3)\
+REFLASH(dragonboard/rescue/tz.mbn,4)\
+REFLASH(dragonboard/rescue/hyp.mbn,5)\
+REFLASH(dragonboard/rescue/sec.dat,6)\
+REFLASH(dragonboard/rescue/emmc_appsboot.mbn,7)\
+REFLASH(dragonboard/u-boot.img,8)\
+"usb stop &&"\
+"echo Reflash completed"
+
 /* Environment */
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"reflash="CONFIG_ENV_REFLASH"\0"\
 	"loadaddr=0x81000000\0" \
 	"dl_uboot=usb start && tftp $loadaddr dragonboard/u-boot.img && usb stop;\0"\
 	"dl_kernel=usb start && tftp $loadaddr dragonboard/linux.itb && usb stop;\0"\
