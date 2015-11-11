@@ -177,9 +177,7 @@ int clk_init_sdc(int slot)
 		div = 4; // 200Mhz for SD
 
 	clk_enable_cbc(SDCC_AHB_CBCR(slot));
-//	clk_rcg_set_rate_mnd(&sdc_regs[slot], 12, 1, 4, CFG_CLK_SRC_CXO); // 400kHz, cxo
-#warning TODO: here, gpll0 source should be set - not cxo...
-	clk_rcg_set_rate_mnd(&sdc_regs[slot - 1], div, 0, 0, CFG_CLK_SRC_CXO); // 800Mhz/div, gpll0
+	clk_rcg_set_rate_mnd(&sdc_regs[slot - 1], div, 0, 0, CFG_CLK_SRC_GPLL0); // 800Mhz/div, gpll0
 	clk_enable_gpll0();
 	clk_enable_cbc(SDCC_APPS_CBCR(slot));
 	return 0;

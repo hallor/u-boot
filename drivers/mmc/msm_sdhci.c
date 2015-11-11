@@ -93,7 +93,7 @@ static int msm_sdc_probe(struct udevice *dev)
 	}
 
 	// automatically detect max speed, min speed is because of using gpll0
-	return add_sdhci(host, 0, 20000000);
+	return add_sdhci(host, 0, 0);
 }
 
 static int msm_sdc_remove(struct udevice *dev)
