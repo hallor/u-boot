@@ -92,6 +92,9 @@ static int msm_sdc_probe(struct udevice *dev)
 		writel(caps, host->ioaddr + SDHCI_VENDOR_SPEC_CAPABILITIES0);
 	}
 
+	/* Set host controller version */
+	host->version = sdhci_readw(host, SDHCI_HOST_VERSION);
+
 	// automatically detect max speed, min speed is because of using gpll0
 	return add_sdhci(host, 0, 0);
 }
