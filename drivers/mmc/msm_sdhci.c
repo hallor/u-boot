@@ -61,6 +61,7 @@ static int msm_sdc_probe(struct udevice *dev)
 	host->name = "msm_sdhci";
 	host->ioaddr = prv->base + SDCC_SDHCI_OFFSET;
 	host->quirks = SDHCI_QUIRK_WAIT_SEND_CMD | SDHCI_QUIRK_BROKEN_R1B;
+	host->index = prv->no - 1;
 
 	if (clk_init_sdc(prv->no))
 		return -1;
