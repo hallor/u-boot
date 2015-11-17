@@ -145,7 +145,8 @@
 #define CONFIG_ENV_REFLASH \
 "mmc dev 0 &&"\
 "usb start &&"\
-"tftp $loadaddr dragonboard/rescue/gpt_both0.bin && mmc write $loadaddr 0 64 &&"\
+"tftp $loadaddr dragonboard/rescue/gpt_both0.bin && mmc write $loadaddr 0 43 &&" \
+"mmc rescan &&"\
 REFLASH(dragonboard/rescue/NON-HLOS.bin,1)\
 REFLASH(dragonboard/rescue/sbl1.mbn,2)\
 REFLASH(dragonboard/rescue/rpm.mbn,3)\
