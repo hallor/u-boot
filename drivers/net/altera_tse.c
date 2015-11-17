@@ -152,13 +152,11 @@ static void tse_adjust_link(struct altera_tse_priv *priv,
 	writel(refvar, &mac_dev->command_config);
 }
 
-static int altera_tse_send(struct udevice *dev, void *packet, int length)
+static int altera_tse_send_sgdma(struct udevice *dev, void *packet, int length)
 {
 	struct altera_tse_priv *priv = dev_get_priv(dev);
 	struct alt_sgdma_descriptor *tx_desc = priv->tx_desc;
-	unsigned long tx_buf = (unsigned long)packet;
 
-	flush_dcache_range(tx_buf, tx_buf + length);
 	alt_sgdma_construct_descriptor(
 		tx_desc,
 		tx_desc + 1,
@@ -178,7 +176,8 @@ static int altera_tse_send(struct udevice *dev, void *packet, int length)
 	return tx_desc->actual_bytes_transferred;
 }
 
-static int altera_tse_recv(struct udevice *dev, int flags, uchar **packetp)
+static int altera_tse_recv_sgdma(struct udevice *dev, int flags,
+				 uchar **packetp)
 {
 	struct altera_tse_priv *priv = dev_get_priv(dev);
 	struct alt_sgdma_descriptor *rx_desc = priv->rx_desc;
@@ -186,6 +185,7 @@ static int altera_tse_recv(struct udevice *dev, int flags, uchar **packetp)
 
 	if (rx_desc->descriptor_status &
 	    ALT_SGDMA_DESCRIPTOR_STATUS_TERMINATED_BY_EOP_MSK) {
+		alt_sgdma_wait_transfer(priv->sgdma_rx);
 		packet_length = rx_desc->actual_bytes_transferred;
 		debug("recv %d bytes\n", packet_length);
 		*packetp = priv->rx_buf;
@@ -196,15 +196,12 @@ static int altera_tse_recv(struct udevice *dev, int flags, uchar **packetp)
 	return -EAGAIN;
 }
 
-static int altera_tse_free_pkt(struct udevice *dev, uchar *packet,
-			       int length)
+static int altera_tse_free_pkt_sgdma(struct udevice *dev, uchar *packet,
+				     int length)
 {
 	struct altera_tse_priv *priv = dev_get_priv(dev);
 	struct alt_sgdma_descriptor *rx_desc = priv->rx_desc;
-	unsigned long rx_buf = (unsigned long)priv->rx_buf;
 
-	alt_sgdma_wait_transfer(priv->sgdma_rx);
-	invalidate_dcache_range(rx_buf, rx_buf + PKTSIZE_ALIGN);
 	alt_sgdma_construct_descriptor(
 		rx_desc,
 		rx_desc + 1,
@@ -223,16 +220,33 @@ static int altera_tse_free_pkt(struct udevice *dev, uchar *packet,
 	return 0;
 }
 
-static void altera_tse_stop(struct udevice *dev)
+static void altera_tse_stop_mac(struct altera_tse_priv *priv)
+{
+	struct alt_tse_mac *mac_dev = priv->mac_dev;
+	u32 status;
+	ulong ctime;
+
+	/* reset the mac */
+	writel(ALTERA_TSE_CMD_SW_RESET_MSK, &mac_dev->command_config);
+	ctime = get_timer(0);
+	while (1) {
+		status = readl(&mac_dev->command_config);
+		if (!(status & ALTERA_TSE_CMD_SW_RESET_MSK))
+			break;
+		if (get_timer(ctime) > ALT_TSE_SW_RESET_TIMEOUT) {
+			debug("Reset mac timeout\n");
+			break;
+		}
+	}
+}
+
+static void altera_tse_stop_sgdma(struct udevice *dev)
 {
 	struct altera_tse_priv *priv = dev_get_priv(dev);
-	struct alt_tse_mac *mac_dev = priv->mac_dev;
 	struct alt_sgdma_registers *rx_sgdma = priv->sgdma_rx;
 	struct alt_sgdma_registers *tx_sgdma = priv->sgdma_tx;
 	struct alt_sgdma_descriptor *rx_desc = priv->rx_desc;
-	u32 status;
 	int ret;
-	ulong ctime;
 
 	/* clear rx desc & wait for sgdma to complete */
 	rx_desc->descriptor_control = 0;
@@ -247,19 +261,121 @@ static void altera_tse_stop(struct udevice *dev)
 	if (ret == -ETIMEDOUT)
 		writel(ALT_SGDMA_CONTROL_SOFTWARERESET_MSK,
 		       &tx_sgdma->control);
+}
 
-	/* reset the mac */
-	writel(ALTERA_TSE_CMD_SW_RESET_MSK, &mac_dev->command_config);
+static void msgdma_reset(struct msgdma_csr *csr)
+{
+	u32 status;
+	ulong ctime;
+
+	/* Reset mSGDMA */
+	writel(MSGDMA_CSR_STAT_MASK, &csr->status);
+	writel(MSGDMA_CSR_CTL_RESET, &csr->control);
 	ctime = get_timer(0);
 	while (1) {
-		status = readl(&mac_dev->command_config);
-		if (!(status & ALTERA_TSE_CMD_SW_RESET_MSK))
+		status = readl(&csr->status);
+		if (!(status & MSGDMA_CSR_STAT_RESETTING))
 			break;
 		if (get_timer(ctime) > ALT_TSE_SW_RESET_TIMEOUT) {
-			debug("Reset mac timeout\n");
+			debug("Reset msgdma timeout\n");
 			break;
 		}
 	}
+	/* Clear status */
+	writel(MSGDMA_CSR_STAT_MASK, &csr->status);
+}
+
+static u32 msgdma_wait(struct msgdma_csr *csr)
+{
+	u32 status;
+	ulong ctime;
+
+	/* Wait for the descriptor to complete */
+	ctime = get_timer(0);
+	while (1) {
+		status = readl(&csr->status);
+		if (!(status & MSGDMA_CSR_STAT_BUSY))
+			break;
+		if (get_timer(ctime) > ALT_TSE_SGDMA_BUSY_TIMEOUT) {
+			debug("sgdma timeout\n");
+			break;
+		}
+	}
+	/* Clear status */
+	writel(MSGDMA_CSR_STAT_MASK, &csr->status);
+
+	return status;
+}
+
+static int altera_tse_send_msgdma(struct udevice *dev, void *packet,
+				  int length)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+	struct msgdma_extended_desc *desc = priv->tx_desc;
+	u32 tx_buf = virt_to_phys(packet);
+	u32 status;
+
+	writel(tx_buf, &desc->read_addr_lo);
+	writel(0, &desc->read_addr_hi);
+	writel(0, &desc->write_addr_lo);
+	writel(0, &desc->write_addr_hi);
+	writel(length, &desc->len);
+	writel(0, &desc->burst_seq_num);
+	writel(MSGDMA_DESC_TX_STRIDE, &desc->stride);
+	writel(MSGDMA_DESC_CTL_TX_SINGLE, &desc->control);
+	status = msgdma_wait(priv->sgdma_tx);
+	debug("sent %d bytes, status %08x\n", length, status);
+
+	return 0;
+}
+
+static int altera_tse_recv_msgdma(struct udevice *dev, int flags,
+				  uchar **packetp)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+	struct msgdma_csr *csr = priv->sgdma_rx;
+	struct msgdma_response *resp = priv->rx_resp;
+	u32 level, length, status;
+
+	level = readl(&csr->resp_fill_level);
+	if (level & 0xffff) {
+		length = readl(&resp->bytes_transferred);
+		status = readl(&resp->status);
+		debug("recv %d bytes, status %08x\n", length, status);
+		*packetp = priv->rx_buf;
+
+		return length;
+	}
+
+	return -EAGAIN;
+}
+
+static int altera_tse_free_pkt_msgdma(struct udevice *dev, uchar *packet,
+				      int length)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+	struct msgdma_extended_desc *desc = priv->rx_desc;
+	u32 rx_buf = virt_to_phys(priv->rx_buf);
+
+	writel(0, &desc->read_addr_lo);
+	writel(0, &desc->read_addr_hi);
+	writel(rx_buf, &desc->write_addr_lo);
+	writel(0, &desc->write_addr_hi);
+	writel(PKTSIZE_ALIGN, &desc->len);
+	writel(0, &desc->burst_seq_num);
+	writel(MSGDMA_DESC_RX_STRIDE, &desc->stride);
+	writel(MSGDMA_DESC_CTL_RX_SINGLE, &desc->control);
+	debug("recv setup\n");
+
+	return 0;
+}
+
+static void altera_tse_stop_msgdma(struct udevice *dev)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+
+	msgdma_reset(priv->sgdma_rx);
+	msgdma_reset(priv->sgdma_tx);
 }
 
 static int tse_mdio_read(struct mii_dev *bus, int addr, int devad, int reg)
@@ -358,6 +474,42 @@ static int altera_tse_write_hwaddr(struct udevice *dev)
 	return 0;
 }
 
+static int altera_tse_send(struct udevice *dev, void *packet, int length)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+	unsigned long tx_buf = (unsigned long)packet;
+
+	flush_dcache_range(tx_buf, tx_buf + length);
+
+	return priv->ops->send(dev, packet, length);
+}
+
+static int altera_tse_recv(struct udevice *dev, int flags, uchar **packetp)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+
+	return priv->ops->recv(dev, flags, packetp);
+}
+
+static int altera_tse_free_pkt(struct udevice *dev, uchar *packet,
+			       int length)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+	unsigned long rx_buf = (unsigned long)priv->rx_buf;
+
+	invalidate_dcache_range(rx_buf, rx_buf + PKTSIZE_ALIGN);
+
+	return priv->ops->free_pkt(dev, packet, length);
+}
+
+static void altera_tse_stop(struct udevice *dev)
+{
+	struct altera_tse_priv *priv = dev_get_priv(dev);
+
+	priv->ops->stop(dev);
+	altera_tse_stop_mac(priv);
+}
+
 static int altera_tse_start(struct udevice *dev)
 {
 	struct altera_tse_priv *priv = dev_get_priv(dev);
@@ -405,6 +557,20 @@ static int altera_tse_start(struct udevice *dev)
 	return 0;
 }
 
+static const struct tse_ops tse_sgdma_ops = {
+	.send		= altera_tse_send_sgdma,
+	.recv		= altera_tse_recv_sgdma,
+	.free_pkt	= altera_tse_free_pkt_sgdma,
+	.stop		= altera_tse_stop_sgdma,
+};
+
+static const struct tse_ops tse_msgdma_ops = {
+	.send		= altera_tse_send_msgdma,
+	.recv		= altera_tse_recv_msgdma,
+	.free_pkt	= altera_tse_free_pkt_msgdma,
+	.stop		= altera_tse_stop_msgdma,
+};
+
 static int altera_tse_probe(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_platdata(dev);
@@ -419,6 +585,11 @@ static int altera_tse_probe(struct udevice *dev)
 	int len, idx;
 	int ret;
 
+	priv->dma_type = dev_get_driver_data(dev);
+	if (priv->dma_type == ALT_SGDMA)
+		priv->ops = &tse_sgdma_ops;
+	else
+		priv->ops = &tse_msgdma_ops;
 	/*
 	 * decode regs. there are multiple reg tuples, and they need to
 	 * match with reg-names.
@@ -443,8 +614,14 @@ static int altera_tse_probe(struct udevice *dev)
 			priv->mac_dev = base;
 		else if (strcmp(list, "rx_csr") == 0)
 			priv->sgdma_rx = base;
+		else if (strcmp(list, "rx_desc") == 0)
+			priv->rx_desc = base;
+		else if (strcmp(list, "rx_resp") == 0)
+			priv->rx_resp = base;
 		else if (strcmp(list, "tx_csr") == 0)
 			priv->sgdma_tx = base;
+		else if (strcmp(list, "tx_desc") == 0)
+			priv->tx_desc = base;
 		else if (strcmp(list, "s1") == 0)
 			desc_mem = base;
 		idx += addrc + sizec;
@@ -462,15 +639,18 @@ static int altera_tse_probe(struct udevice *dev)
 	priv->phyaddr = fdtdec_get_int(blob, addr,
 		"reg", 0);
 	/* init desc */
-	len = sizeof(struct alt_sgdma_descriptor) * 4;
-	if (!desc_mem) {
-		desc_mem = dma_alloc_coherent(len, &addr);
-		if (!desc_mem)
-			return -ENOMEM;
+	if (priv->dma_type == ALT_SGDMA) {
+		len = sizeof(struct alt_sgdma_descriptor) * 4;
+		if (!desc_mem) {
+			desc_mem = dma_alloc_coherent(len, &addr);
+			if (!desc_mem)
+				return -ENOMEM;
+		}
+		memset(desc_mem, 0, len);
+		priv->tx_desc = desc_mem;
+		priv->rx_desc = priv->tx_desc +
+			2 * sizeof(struct alt_sgdma_descriptor);
 	}
-	memset(desc_mem, 0, len);
-	priv->tx_desc = desc_mem;
-	priv->rx_desc = priv->tx_desc + 2;
 	/* allocate recv packet buffer */
 	priv->rx_buf = malloc_cache_aligned(PKTSIZE_ALIGN);
 	if (!priv->rx_buf)
@@ -517,8 +697,9 @@ static const struct eth_ops altera_tse_ops = {
 };
 
 static const struct udevice_id altera_tse_ids[] = {
-	{ .compatible = "altr,tse-1.0", },
-	{ }
+	{ .compatible = "altr,tse-msgdma-1.0", .data = ALT_MSGDMA },
+	{ .compatible = "altr,tse-1.0", .data = ALT_SGDMA },
+	{}
 };
 
 U_BOOT_DRIVER(altera_tse) = {

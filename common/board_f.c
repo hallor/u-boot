@@ -796,7 +796,7 @@ static init_fnc_t init_sequence_f[] = {
 	/* TODO: can we rename this to timer_init()? */
 	init_timebase,
 #endif
-#if defined(CONFIG_ARM) || defined(CONFIG_MIPS) || \
+#if defined(CONFIG_X86) || defined(CONFIG_ARM) || defined(CONFIG_MIPS) || \
 		defined(CONFIG_BLACKFIN) || defined(CONFIG_NDS32)
 	timer_init,		/* initialize timer */
 #endif
@@ -808,10 +808,7 @@ static init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_BOARD_POSTCLK_INIT)
 	board_postclk_init,
 #endif
-#ifdef CONFIG_SYS_FSL_CLK
-	get_clocks,
-#endif
-#ifdef CONFIG_M68K
+#if defined(CONFIG_SYS_FSL_CLK) || defined(CONFIG_M68K)
 	get_clocks,
 #endif
 	env_init,		/* initialize environment */

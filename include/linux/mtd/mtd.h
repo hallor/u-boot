@@ -1,7 +1,7 @@
 /*
  * Copyright © 1999-2010 David Woodhouse <dwmw2@infradead.org> et al.
  *
- * Released under GPL
+ * SPDX-License-Identifier:	GPL-2.0+
  *
  */
 
@@ -272,6 +272,8 @@ struct mtd_info {
 	struct module *owner;
 #ifndef __UBOOT__
 	struct device dev;
+#else
+	struct udevice *dev;
 #endif
 	int usecount;
 };
