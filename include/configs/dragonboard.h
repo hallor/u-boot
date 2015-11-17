@@ -97,6 +97,9 @@
 #define CONFIG_CMD_MD5SUM
 #define CONFIG_CMD_MEMINFO	/* meminfo			*/
 #define CONFIG_CMD_MMC
+/* Enable that for switching of boot partitions */
+/* Disabled by default as some sub-commands can brick eMMC */
+/*#define CONFIG_SUPPORT_EMMC_BOOT */
 #define CONFIG_CMD_PART
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO	/* Register dump		*/
