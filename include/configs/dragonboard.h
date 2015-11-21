@@ -162,9 +162,21 @@ REFLASH(dragonboard/u-boot.img,8)\
 "usb stop &&"\
 "echo Reflash completed"
 
+#define CONFIG_UBOOT_REFLASH \
+"mmc dev 0 &&"\
+"usb start &&"\
+"part start mmc 0 8 start && "\
+"setenv size 0x800  &&"\
+"tftp $loadaddr dragonboard/u-boot.img &&" \
+"mmc write $loadaddr $start $size &&"\
+"usb stop &&"\
+"echo Reflash completed &&" \
+"reset"
+
 /* Environment */
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"reflash="CONFIG_ENV_REFLASH"\0"\
+	"reflash_uboot="CONFIG_UBOOT_REFLASH"\0"\
 	"loadaddr=0x81000000\0" \
 	"linux_image=dragonboard/Image\0" \
 	"linux_addr=0x81000000\0"\
