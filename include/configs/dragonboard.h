@@ -136,6 +136,7 @@
 #define CONFIG_ROOTPATH "/home/nfs/dragonboard"
 #define CONFIG_BOOTFILE "dragonboard/linux.itb"
 #define CONFIG_BOOTCOMMAND "usb start && tftp && usb stop && bootm"
+#define CONFIG_BOOTARGS "console=ttyMSM0,115200n8"
 
 /* Does what recovery does */
 #define REFLASH(file, part) \
