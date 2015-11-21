@@ -178,6 +178,8 @@ REFLASH(dragonboard/u-boot.img,8)\
 	"reflash="CONFIG_ENV_REFLASH"\0"\
 	"reflash_uboot="CONFIG_UBOOT_REFLASH"\0"\
 	"loadaddr=0x81000000\0" \
+	"fdt_high=0xffffffffffffffff\0" \
+	"initrd_high=0xffffffffffffffff\0" \
 	"linux_image=dragonboard/Image\0" \
 	"linux_addr=0x81000000\0"\
 	"fdt_image=dragonboard/apq8016-sbc.dtb\0" \
