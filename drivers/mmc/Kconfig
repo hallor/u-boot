@@ -16,6 +16,12 @@ config DM_MMC
 	  appear as block devices in U-Boot and can support filesystems such
 	  as EXT4 and FAT.
 
+config MSM_SDHCI
+	bool "Enable Qualcomm SDHCI controller"
+	depends on DM && DM_MMC
+	help
+	  This enables support for Qualcomm SDHCI controller.
+
 config ROCKCHIP_DWMMC
 	bool "Rockchip SD/MMC controller support"
 	depends on DM_MMC && OF_CONTROL
