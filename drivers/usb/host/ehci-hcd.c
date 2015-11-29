@@ -973,11 +973,16 @@ unknown:
 	return -1;
 }
 
+static void ehci_init_after_reset(struct ehci_ctrl *ctrl)
+{
+}
+
 const struct ehci_ops default_ehci_ops = {
 	.set_usb_mode		= ehci_set_usbmode,
 	.get_port_speed		= ehci_get_port_speed,
 	.powerup_fixup		= ehci_powerup_fixup,
 	.get_portsc_register	= ehci_get_portsc_register,
+	.init_after_reset	= ehci_init_after_reset,
 };
 
 static void ehci_setup_ops(struct ehci_ctrl *ctrl, const struct ehci_ops *ops)
@@ -995,6 +1000,8 @@ static void ehci_setup_ops(struct ehci_ctrl *ctrl, const struct ehci_ops *ops)
 		if (!ctrl->ops.get_portsc_register)
 			ctrl->ops.get_portsc_register =
 					ehci_get_portsc_register;
+		if (!ctrl->ops.init_after_reset)
+			ctrl->ops.init_after_reset = ehci_init_after_reset;
 	}
 }
 
@@ -1653,6 +1660,8 @@ int ehci_register(struct udevice *dev, struct ehci_hccr *hccr,
 	ret = ehci_reset(ctrl);
 	if (ret)
 		goto err;
+
+	ops->init_after_reset(ctrl);
 
 	ret = ehci_common_init(ctrl, tweaks);
 	if (ret)
