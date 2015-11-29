@@ -1,0 +1,19 @@
+if TARGET_DRAGONBOARD
+
+config SYS_BOARD
+	default "dragonboard"
+
+config SYS_SOC
+	default "apq8016"
+
+config SYS_CONFIG_NAME
+	default "dragonboard"
+
+config CONS_INDEX
+	int "UART used for console"
+	range 1 2
+	default 1
+	help
+	  The apq8016 SoC has 2 UARTs. For example to use UART0 enter 1 here.
+
+endif
