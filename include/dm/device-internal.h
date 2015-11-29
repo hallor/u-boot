@@ -87,7 +87,7 @@ int device_probe_child(struct udevice *dev, void *parent_priv);
  * @dev: Pointer to device to remove
  * @return 0 if OK, -ve on error (an error here is normally a very bad thing)
  */
-#if CONFIG_IS_ENABLED(DM_DEVICE_REMOVE)
+#ifdef CONFIG_DM_DEVICE_REMOVE
 int device_remove(struct udevice *dev);
 #else
 static inline int device_remove(struct udevice *dev) { return 0; }
@@ -101,13 +101,13 @@ static inline int device_remove(struct udevice *dev) { return 0; }
  * @dev: Pointer to device to unbind
  * @return 0 if OK, -ve on error
  */
-#if CONFIG_IS_ENABLED(DM_DEVICE_REMOVE)
+#ifdef CONFIG_DM_DEVICE_REMOVE
 int device_unbind(struct udevice *dev);
 #else
 static inline int device_unbind(struct udevice *dev) { return 0; }
 #endif
 
-#if CONFIG_IS_ENABLED(DM_DEVICE_REMOVE)
+#ifdef CONFIG_DM_DEVICE_REMOVE
 void device_free(struct udevice *dev);
 #else
 static inline void device_free(struct udevice *dev) {}
