@@ -1,0 +1,31 @@
+CONFIG_ARM=y
+CONFIG_SYS_ARCH="arm"
+CONFIG_SYS_CPU="armv8"
+CONFIG_SYS_SOC="snapdragon"
+CONFIG_SYS_VENDOR="qualcomm"
+CONFIG_SYS_BOARD="dragonboard"
+CONFIG_SYS_CONFIG_NAME="dragonboard"
+
+#
+# ARM architecture
+#
+CONFIG_ARM64=y
+CONFIG_ARCH_SNAPDRAGON=y
+CONFIG_CONS_INDEX=2
+CONFIG_TARGET_DRAGONBOARD=y
+
+# CONFIG_CMD_IMI is not set
+# CONFIG_CMD_IMLS is not set
+# CONFIG_CMD_XIMG is not set
+
+#
+# ARM debug
+#
+CONFIG_DEFAULT_DEVICE_TREE="dragonboard"
+
+#
+# Device Tree Control
+#
+CONFIG_OF_CONTROL=y
+CONFIG_OF_SEPARATE=y
+# CONFIG_OF_EMBED is not set
