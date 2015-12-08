@@ -237,3 +237,65 @@ U_BOOT_DRIVER(gpio_pm8916) = {
 	.ops	= &pm8916_gpio_ops,
 	.priv_auto_alloc_size = sizeof(struct pm8916_gpio_bank),
 };
+
+
+/* Add pmic buttons as GPIO as well - there is no generic way for now */
+#define PON_INT_RT_STS                        0x10
+#define KPDPWR_ON_INT_BIT                     0
+#define RESIN_ON_INT_BIT                      1
+
+static int pm8941_pwrkey_get_function(struct udevice *dev, unsigned offset)
+{
+	return GPIOF_INPUT;
+}
+
+static int pm8941_pwrkey_get_value(struct udevice *dev, unsigned offset)
+{
+	int reg = pmic_reg_read(dev->parent, dev->priv + PON_INT_RT_STS);
+
+	if (reg < 0)
+		return 0;
+
+	switch(offset) {
+	case 0: /* Power button */
+		return ((reg & BIT(KPDPWR_ON_INT_BIT)) != 0);
+		break;
+	case 1: /* Reset button */
+	default:
+		return ((reg & BIT(RESIN_ON_INT_BIT)) != 0);
+		break;
+	}
+}
+
+static const struct dm_gpio_ops pm8941_pwrkey_ops = {
+	.get_value		= pm8941_pwrkey_get_value,
+	.get_function		= pm8941_pwrkey_get_function,
+};
+
+static int pm8941_pwrkey_probe(struct udevice *dev)
+{
+	dev->priv = dev_get_addr(dev);
+	return 0;
+}
+
+static int pm8941_pwrkey_ofdata_to_platdata(struct udevice *dev)
+{
+	struct gpio_dev_priv *uc_priv = dev_get_uclass_priv(dev);
+	uc_priv->gpio_count = 2;
+	uc_priv->bank_name = "pm8916_key";
+	return 0;
+}
+
+static const struct udevice_id pm8941_pwrkey_ids[] = {
+	{ .compatible = "qcom,pm8941-pwrkey" },
+	{ }
+};
+
+U_BOOT_DRIVER(pwrkey_pm8941) = {
+	.name	= "pwrkey_pm8941",
+	.id	= UCLASS_GPIO,
+	.of_match = pm8941_pwrkey_ids,
+	.ofdata_to_platdata = pm8941_pwrkey_ofdata_to_platdata,
+	.probe	= pm8941_pwrkey_probe,
+	.ops	= &pm8941_pwrkey_ops,
+};

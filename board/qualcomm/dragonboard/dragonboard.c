@@ -76,11 +76,20 @@ int board_init(void)
 	return 0;
 }
 
-uint32_t pm8916_is_resin_pressed(void);
-
 int misc_init_r(void)
 {
-	if (pm8916_is_resin_pressed()) {
+	int ret;
+	struct gpio_desc resin;
+
+	ret = dm_gpio_lookup_name("pm8916_key1", &resin);
+	if (ret < 0)
+		return 0;
+
+	ret = dm_gpio_request(&resin, "key_resin");
+	if (ret < 0)
+		return 0;
+
+	if (dm_gpio_get_value(&resin)) {
 		setenv("bootdelay", "-1");
 		printf("Power button pressed - dropping to console.\n");
 	}

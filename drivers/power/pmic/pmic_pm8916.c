@@ -17,40 +17,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define PON_INT_RT_STS                        0x810
-#define KPDPWR_ON_INT_BIT                     0
-#define RESIN_ON_INT_BIT                      1
-
-int pm8916_is_pwrkey_pressed(void)
-{
-#if 0
-	int ret;
-	uint8_t val;
-
-	ret = pmic_bus_read(PON_INT_RT_STS, &val);
-
-	return ret == 0 && ((val & BIT(KPDPWR_ON_INT_BIT)) != 0);
-#endif
-#warning TODO: rewrite for new pmic
-	return 0;
-}
-
-int pm8916_is_resin_pressed(void)
-{
-#if 0
-	int ret;
-	uint8_t val;
-
-	ret = pmic_bus_read(PON_INT_RT_STS, &val);
-
-	return ret == 0 && ((val & BIT(RESIN_ON_INT_BIT)) != 0);
-#endif
-#warning TODO: rewrite for new pmic
-	return 0;
-}
-
-/////////////////////////////////////////// NEW
-
 #define EXTRACT_PID(x) (((x) >> 8) & 0xFF)
 #define EXTRACT_REG(x) ((x) & 0xFF)
 
@@ -60,7 +26,7 @@ struct spmi_pmic_priv {
 
 static int spmi_pmic_reg_count(struct udevice *dev)
 {
-	return 500; // TODO: what return here?
+	return 0xFFFF;
 }
 
 static int spmi_pmic_write(struct udevice *dev, uint reg, const uint8_t *buff,
@@ -104,7 +70,7 @@ static const struct udevice_id spmi_pmic_ids[] = {
 };
 
 static const struct pmic_child_info pmic_children_info[] = {
-	{ .prefix = "pwrkey", .driver = "pm8941-pwrkey" },
+	{ .prefix = "pwrkey", .driver = "pwrkey_pm8941" },
 	{ .prefix = "gpios", .driver = "gpio_pm8916" },
 	{ },
 };
