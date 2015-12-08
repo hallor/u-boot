@@ -25,32 +25,13 @@ void dram_init_banksize(void)
 	gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
 }
 
+static struct gpio_desc hub_reset, usb_sel;
+
 void board_prepare_usb(enum usb_init_type type)
 {
-	int ret;
-	struct gpio_desc hub_reset, usb_sel;
-
-	ret = dm_gpio_lookup_name("pmic2", &hub_reset);
-	if (ret < 0) {
-		printf("Failed to lookup pmic2 gpio\n");
-		return;
-	}
-
-	ret = dm_gpio_lookup_name("pmic3", &usb_sel);
-	if (ret < 0) {
-		printf("Failed to lookup pmic3 gpio\n");
-		return;
-	}
-
-	ret = dm_gpio_request(&hub_reset, "hub_reset");
-	if (ret < 0) {
-		printf("Failed to request hub_reset gpio\n");
-		return;
-	}
-
-	ret = dm_gpio_request(&usb_sel, "usb_sel");
-	if (ret < 0) {
-		printf("Failed to request usb_sel gpio\n");
+	if (!dm_gpio_is_valid(&hub_reset) ||
+	    !dm_gpio_is_valid(&usb_sel)) {
+		printf("USB gpio not ready.\n");
 		return;
 	}
 
@@ -65,14 +46,37 @@ void board_prepare_usb(enum usb_init_type type)
 		/* Disable hub */
 		dm_gpio_set_dir_flags(&hub_reset, GPIOD_IS_OUT);
 		/* Switch back to device connector */
-		dm_gpio_set_dir_flags(&hub_reset, GPIOD_IS_OUT);
+		dm_gpio_set_dir_flags(&usb_sel, GPIOD_IS_OUT);
 	}
-
-#warning TODO: free gpio somehow
 }
 
 int board_init(void)
 {
+	int ret;
+
+	ret = dm_gpio_lookup_name("pmic2", &hub_reset);
+	if (ret < 0) {
+		printf("Failed to lookup pmic2 gpio\n");
+		return 0;
+	}
+
+	ret = dm_gpio_lookup_name("pmic3", &usb_sel);
+	if (ret < 0) {
+		printf("Failed to lookup pmic3 gpio\n");
+		return 0;
+	}
+
+	ret = dm_gpio_request(&hub_reset, "hub_reset");
+	if (ret < 0) {
+		printf("Failed to request hub_reset gpio\n");
+		return 0;
+	}
+
+	ret = dm_gpio_request(&usb_sel, "usb_sel");
+	if (ret < 0) {
+		printf("Failed to request usb_sel gpio\n");
+		return 0;
+	}
 	return 0;
 }
 
