@@ -158,7 +158,7 @@ static void clk_rcg_set_rate_mnd(struct bcr_regs *regs, int div, int m, int n,
 	clk_bcr_update(regs->cmd_rcgr);
 }
 
-struct bcr_regs sdc_regs[] = {
+static const struct bcr_regs sdc_regs[] = {
 	{
 	.cfg_rcgr = SDCC_CFG_RCGR(1),
 	.cmd_rcgr = SDCC_CMD_RCGR(1),
@@ -196,7 +196,7 @@ int clk_init_sdc(int slot)
 	return 0;
 }
 
-struct bcr_regs uart2_regs = {
+static const struct bcr_regs uart2_regs = {
 	.cfg_rcgr = BLSP1_UART2_APPS_CFG_RCGR,
 	.cmd_rcgr = BLSP1_UART2_APPS_CMD_RCGR,
 	.M = BLSP1_UART2_APPS_M,

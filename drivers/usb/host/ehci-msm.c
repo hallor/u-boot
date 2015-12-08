@@ -85,7 +85,7 @@ static void reset_usb_phy(struct msm_ehci_priv *priv)
 }
 
 
-static void msm_init_after_reset(struct ehci_ctrl *dev)
+static int msm_init_after_reset(struct ehci_ctrl *dev)
 {
 	struct msm_ehci_priv *p = container_of(dev, struct msm_ehci_priv, ctrl);
 	uint32_t val;
@@ -112,6 +112,8 @@ static void msm_init_after_reset(struct ehci_ctrl *dev)
 
 	/* set mode to host controller */
 	writel(USBMODE_HOST, p->base + USB_USBMODE);
+
+	return 0;
 }
 
 static const struct ehci_ops msm_ehci_ops = {

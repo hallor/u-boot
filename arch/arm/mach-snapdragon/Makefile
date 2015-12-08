@@ -6,4 +6,3 @@
 
 obj-y	+= clock-apq8016.o
 obj-y	+= reset.o
-obj-y	+= spmi.o

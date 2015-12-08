@@ -64,6 +64,7 @@
 
 /* PMIC */
 #define CONFIG_POWER_PM8916
+#define CONFIG_DM_PMIC
 
 /* Reset controller */
 #define CONFIG_RESET
@@ -72,14 +73,8 @@
 #define CONFIG_SIMPLE_BUS
 
 /* Status led */
-#define CONFIG_GPIO_LED
-#define CONFIG_STATUS_LED
-#define CONFIG_BOARD_SPECIFIC_LED
-#define STATUS_LED_BIT			21
-/* Status LED polarity is inversed, so init it in the "off" state */
-#define STATUS_LED_STATE		STATUS_LED_ON
-#define STATUS_LED_PERIOD		(CONFIG_SYS_HZ / 2)
-#define STATUS_LED_BOOT			0
+#define CONFIG_LED
+#define CONFIG_LED_GPIO
 
 /* Needed for proper usb removal */
 #define CONFIG_DM_DEVICE_REMOVE
@@ -113,7 +108,6 @@
 #define CONFIG_CMD_FAT		/* FAT support			*/
 #define CONFIG_CMD_GPIO
 #define CONFIG_CMD_GPT
-#define CONFIG_CMD_LED
 #define CONFIG_CMD_MD5SUM
 #define CONFIG_CMD_MEMINFO	/* meminfo			*/
 #define CONFIG_CMD_MMC

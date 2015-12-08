@@ -26,9 +26,63 @@
 		ranges = <0x0 0x0 0x0 0xffffffff>;
 		compatible = "simple-bus";
 
+		qcom,gcc@1800000 {
+			compatible = "qcom,gcc-msm8916";
+			reg = <0x1800000 0x80000>;
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+
+			gpll0: gpll@2101c {
+				compatible = "qcom,gcc-msm8916,gpll";
+				reg = <0x2101C>; /* status */
+				vote = <0x45000 0>; /* vote reg, bit */
+			};
+
+			clk_uart2_iface: cbc@1008 {
+				compatible = "qcom,gcc-msm8916,cbc";
+				reg = <0x1008>; /* CBCR */
+			};
+
+			clk_uart2_apps: rcg@302c {
+				compatible = "qcom,gcc-msm8916,rcg";
+				/* CBCR, CMD, CFG, M, N, D*/
+				reg = <0x302C 0x3034 0x3038 0x303C 0x3040 0x3044>;
+				rate = <1 144 15625>; /* div, m, n */
+				clocls = <&gpll0>;
+			};
+
+			clk_sdc1_iface: cbc@4101c {
+				compatible = "qcom,gcc-msm8916,cbc";
+				reg = <0x4101C>; /* CBCR */
+			};
+
+			clk_sdc1_apps: rcg@0x41018 {
+				compatible = "qcom,gcc-msm8916,rcg";
+				/* CBCR, CMD, CFG, M, N, D*/
+				reg = <0x41018 0x41004 0x41008 0x4100C 0x41010 0x41014>;
+				rate = <8 0 0>; /* div, m, n */
+				clocls = <&gpll0>;
+			};
+
+			clk_sdc2_iface: cbc@4201c {
+				compatible = "qcom,gcc-msm8916,cbc";
+				reg = <0x4201C>; /* CBCR */
+			};
+
+			clk_sdc2_apps: rcg@0x42018 {
+				compatible = "qcom,gcc-msm8916,rcg";
+				/* CBCR, CMD, CFG, M, N, D*/
+				reg = <0x42018 0x42004 0x42008 0x4200C 0x42010 0x42014>;
+				rate = <4 0 0>; /* div, m, n */
+				clocls = <&gpll0>;
+			};
+		};
+
 		serial@78b0000 {
 			compatible = "qcom,msm-uartdm-v1.4";
 			reg = <0x78b0000 0x200>;
+			u-boot,dm-pre-reloc;
+			clocks = <&clk_uart2_iface>, <&clk_uart2_apps>;
 		};
 
 		restart@4ab000 {
@@ -36,7 +90,7 @@
 			reg = <0x4ab000 0x4>;
 		};
 
-		pinctrl@1000000 {
+		soc_gpios: pinctrl@1000000 {
 			compatible = "qcom,msm8916-pinctrl";
 			reg = <0x1000000 0x300000>;
 			gpio-controller;
@@ -55,6 +109,7 @@
 			bus-width = <0x8>;
 			index = <0x0>;
 			non-removable;
+			clocks = <&clk_sdc1_iface>, <&clk_sdc1_apps>;
 		};
 
 		sdhci@07864000 {
@@ -62,6 +117,73 @@
 			reg = <0x7864900 0x11c 0x7864000 0x800>;
 			index = <0x1>;
 			bus-width = <0x4>;
+			clocks = <&clk_sdc2_iface>, <&clk_sdc2_apps>;
+		};
+
+		spmi@200f000 {
+			compatible = "qcom,spmi-pmic-arb";
+			reg = <0x200f000 0x1000 0x2400000 0x400000 0x2c00000 0x400000 0x3800000 0x200000 0x200a000 0x2100>;
+			reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			pm8916@0 {
+				compatible = "qcom,spmi-pmic";
+				reg = <0x0>;
+				#address-cells = <0x1>;
+				#size-cells = <0x0>;
+
+				pwrkey@800 {
+					compatible = "qcom,pm8941-pwrkey";
+					reg = <0x800>;
+				};
+
+				pmic_gpios: gpios@c000 {
+					compatible = "qcom,pm8916-gpio";
+					reg = <0xc000 0x400>;
+					gpio-controller;
+					gpio-count = <4>;
+					gpio-bank-name="pmic";
+
+					usb_hub_reset_n_pm {
+						gpios = <&pmic_gpios 2 0>;
+					};
+
+					usb_sw_sel_pm {
+						gpios = <&pmic_gpios 3 0>;
+					};
+
+				};
+			};
+
+			pm8916@1 {
+				compatible = "qcom,spmi-pmic";
+				reg = <0x1>;
+				#address-cells = <0x1>;
+				#size-cells = <0x0>;
+			};
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user1 {
+			label = "green:user1";
+			gpios = <&soc_gpios 21 0>;
+		};
+
+		user2 {
+			label = "green:user2";
+			gpios = <&soc_gpios 120 0>;
+		};
+
+		user3 {
+			label = "green:user3";
+			gpios = <&pmic_gpios 0 0>;
+		};
+
+		user4 {
+			label = "green:user4";
+			gpios = <&pmic_gpios 1 0>;
 		};
 	};
 };

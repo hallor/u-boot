@@ -9,6 +9,7 @@
 #include <common.h>
 #include <dm.h>
 #include <usb.h>
+#include <asm/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -24,34 +25,50 @@ void dram_init_banksize(void)
 	gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
 }
 
-#define PM_GPIO_USB_HUB_RESET_N 3
-#define PM_GPIO_USB_SW_SEL 4
-int pm8916_gpio_output(uint8_t gpio, int v);
-int pm8916_gpio_set(uint8_t gpio, uint8_t value);
 void board_prepare_usb(enum usb_init_type type)
 {
+	int ret;
+	struct gpio_desc hub_reset, usb_sel;
+
+	ret = dm_gpio_lookup_name("pmic2", &hub_reset);
+	if (ret < 0) {
+		printf("Failed to lookup pmic2 gpio\n");
+		return;
+	}
+
+	ret = dm_gpio_lookup_name("pmic3", &usb_sel);
+	if (ret < 0) {
+		printf("Failed to lookup pmic3 gpio\n");
+		return;
+	}
+
+	ret = dm_gpio_request(&hub_reset, "hub_reset");
+	if (ret < 0) {
+		printf("Failed to request hub_reset gpio\n");
+		return;
+	}
+
+	ret = dm_gpio_request(&usb_sel, "usb_sel");
+	if (ret < 0) {
+		printf("Failed to request usb_sel gpio\n");
+		return;
+	}
+
 	if (type == USB_INIT_HOST) {
 		/* Start USB Hub */
-		pm8916_gpio_output(PM_GPIO_USB_HUB_RESET_N, 1);
+		dm_gpio_set_dir_flags(&hub_reset, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
 		mdelay(100);
 		/* Switch usb to host connectors */
-		pm8916_gpio_output(PM_GPIO_USB_SW_SEL, 1);
+		dm_gpio_set_dir_flags(&usb_sel, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
 		mdelay(100);
 	} else { /* Device */
 		/* Disable hub */
-		pm8916_gpio_set(PM_GPIO_USB_HUB_RESET_N, 0);
+		dm_gpio_set_dir_flags(&hub_reset, GPIOD_IS_OUT);
 		/* Switch back to device connector */
-		pm8916_gpio_set(PM_GPIO_USB_SW_SEL, 0);
+		dm_gpio_set_dir_flags(&hub_reset, GPIOD_IS_OUT);
 	}
-}
 
-int mach_spmi_init(void);
-int pm8916_init(void);
-int power_init_board(void)
-{
-	mach_spmi_init();
-	pm8916_init();
-	return 0;
+#warning TODO: free gpio somehow
 }
 
 int board_init(void)

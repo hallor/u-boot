@@ -67,5 +67,6 @@ obj-y += input/
 obj-y += soc/
 obj-$(CONFIG_REMOTEPROC) += remoteproc/
 obj-y += thermal/
+obj-y += spmi/
 
 endif
