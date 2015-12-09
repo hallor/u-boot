@@ -17,10 +17,10 @@ config DM_MMC
 	  as EXT4 and FAT.
 
 config MSM_SDHCI
-	bool "Enable Qualcomm SDHCI controller"
-	depends on DM && DM_MMC
+	bool "Qualcomm SDHCI controller"
+	depends on DM_MMC
 	help
-	  This enables support for Qualcomm SDHCI controller.
+	  Enables support for SDHCI 2.0 controller manufactured by Qualcomm.
 
 config ROCKCHIP_DWMMC
 	bool "Rockchip SD/MMC controller support"

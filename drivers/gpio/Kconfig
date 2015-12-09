@@ -47,11 +47,19 @@ config LPC32XX_GPIO
 	  Support for the LPC32XX GPIO driver.
 
 config MSM_GPIO
-	bool "Enable Qualcomm GPIO driver"
-	depends on DM
+	bool "Qualcomm GPIO driver"
+	depends on DM_GPIO
 	default n
 	help
-	  Support GPIO controllers on Qualcomm SoCs.
+	  Support GPIO controllers on Qualcomm Snapdragon family of SoCs.
+
+config PM8916_GPIO
+	bool "Qualcomm PM8916 PMIC GPIO/keypad driver"
+	depends on DM_GPIO && PMIC_PM8916
+	help
+	  Support for GPIO1-GPIO4 pins and power/reset buttons found on
+	  Qualcomm PM8916 PMIC.
+	
 
 config ROCKCHIP_GPIO
 	bool "Rockchip GPIO driver"

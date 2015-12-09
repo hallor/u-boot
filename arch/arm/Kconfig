@@ -496,6 +496,12 @@ config OMAP54XX
 config ARCH_SNAPDRAGON
 	bool "Qualcomm Snapdragon SoCs"
 	select ARM64
+	select DM
+	select DM_GPIO
+	select DM_SERIAL
+	select DM_SPMI
+	select OF_CONTROL
+	select OF_SEPARATE
 
 config RMOBILE
 	bool "Renesas ARM SoCs"

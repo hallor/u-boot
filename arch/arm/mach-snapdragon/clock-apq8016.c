@@ -3,12 +3,11 @@
  *
  * (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
  *
- * Based on Linux/Little-Kernel driver, simplified
+ * Based on Little Kernel driver, simplified
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * SPDX-License-Identifier:	BSD-3-Clause
  */
 
-#include <asm/arch/sysmap.h>
 #include <asm/io.h>
 #include <dm.h>
 #include <clk.h>

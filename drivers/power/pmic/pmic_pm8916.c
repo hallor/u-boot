@@ -3,8 +3,6 @@
  *
  * (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
  *
- * Based on Little Kernel code
- *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <common.h>
@@ -20,19 +18,19 @@ DECLARE_GLOBAL_DATA_PTR;
 #define EXTRACT_PID(x) (((x) >> 8) & 0xFF)
 #define EXTRACT_REG(x) ((x) & 0xFF)
 
-struct spmi_pmic_priv {
+struct pm8916_priv {
 	uint16_t usid; /* Slave ID on SPMI bus */
 };
 
-static int spmi_pmic_reg_count(struct udevice *dev)
+static int pm8916_reg_count(struct udevice *dev)
 {
 	return 0xFFFF;
 }
 
-static int spmi_pmic_write(struct udevice *dev, uint reg, const uint8_t *buff,
-			   int len)
+static int pm8916_write(struct udevice *dev, uint reg, const uint8_t *buff,
+			int len)
 {
-	struct spmi_pmic_priv *priv = dev_get_priv(dev);
+	struct pm8916_priv *priv = dev_get_priv(dev);
 
 	if (len != 1)
 		return -EINVAL;
@@ -41,9 +39,9 @@ static int spmi_pmic_write(struct udevice *dev, uint reg, const uint8_t *buff,
 			      EXTRACT_REG(reg), *buff);
 }
 
-static int spmi_pmic_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
+static int pm8916_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 {
-	struct spmi_pmic_priv *priv = dev_get_priv(dev);
+	struct pm8916_priv *priv = dev_get_priv(dev);
 	int val;
 
 	if (len != 1)
@@ -58,42 +56,42 @@ static int spmi_pmic_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 	return 0;
 }
 
-static struct dm_pmic_ops spmi_pmic_ops = {
-	.reg_count = spmi_pmic_reg_count,
-	.read = spmi_pmic_read,
-	.write = spmi_pmic_write,
+static struct dm_pmic_ops pm8916_ops = {
+	.reg_count = pm8916_reg_count,
+	.read = pm8916_read,
+	.write = pm8916_write,
 };
 
-static const struct udevice_id spmi_pmic_ids[] = {
+static const struct udevice_id pm8916_ids[] = {
 	{ .compatible = "qcom,spmi-pmic" },
 	{ }
 };
 
-static const struct pmic_child_info pmic_children_info[] = {
-	{ .prefix = "pwrkey", .driver = "pwrkey_pm8941" },
+static const struct pmic_child_info pm8916_children_info[] = {
+	{ .prefix = "pon", .driver = "pwrkey_pm8916" },
 	{ .prefix = "gpios", .driver = "gpio_pm8916" },
 	{ },
 };
 
-static int spmi_pmic_probe(struct udevice *dev)
+static int pm8916_probe(struct udevice *dev)
 {
-	struct spmi_pmic_priv *priv = dev_get_priv(dev);
+	struct pm8916_priv *priv = dev_get_priv(dev);
 	priv->usid = dev_get_addr(dev);
 	return 0;
 }
 
-static int spmi_pmic_bind(struct udevice *dev)
+static int pm8916_bind(struct udevice *dev)
 {
-	pmic_bind_children(dev, dev->of_offset, pmic_children_info);
+	pmic_bind_children(dev, dev->of_offset, pm8916_children_info);
 	return 0;
 }
 
-U_BOOT_DRIVER(pmic_spmi) = {
-	.name = "spmi_pmic",
+U_BOOT_DRIVER(pmic_pm8916) = {
+	.name = "pmic_pm8916",
 	.id = UCLASS_PMIC,
-	.of_match = spmi_pmic_ids,
-	.bind = spmi_pmic_bind,
-	.probe = spmi_pmic_probe,
-	.ops = &spmi_pmic_ops,
-	.priv_auto_alloc_size = sizeof(struct spmi_pmic_priv),
+	.of_match = pm8916_ids,
+	.bind = pm8916_bind,
+	.probe = pm8916_probe,
+	.ops = &pm8916_ops,
+	.priv_auto_alloc_size = sizeof(struct pm8916_priv),
 };

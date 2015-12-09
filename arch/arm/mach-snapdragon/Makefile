@@ -4,5 +4,5 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-y	+= clock-apq8016.o
-obj-y	+= reset.o
+obj-y += clock-apq8016.o
+obj-y += reset.o

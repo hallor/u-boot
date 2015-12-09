@@ -13,6 +13,7 @@ obj-$(CONFIG_DM_PMIC_SANDBOX) += sandbox.o i2c_pmic_emul.o
 obj-$(CONFIG_PMIC_ACT8846) += act8846.o
 obj-$(CONFIG_PMIC_TPS65090) += tps65090.o
 obj-$(CONFIG_PMIC_S5M8767) += s5m8767.o
+obj-$(CONFIG_PMIC_PM8916) += pmic_pm8916.o
 
 obj-$(CONFIG_POWER_LTC3676) += pmic_ltc3676.o
 obj-$(CONFIG_POWER_MAX77696) += pmic_max77696.o
@@ -27,4 +28,3 @@ obj-$(CONFIG_POWER_TPS65218) += pmic_tps62362.o
 obj-$(CONFIG_POWER_TPS65218) += pmic_tps65218.o
 obj-$(CONFIG_POWER_TPS65910) += pmic_tps65910.o
 obj-$(CONFIG_POWER_HI6553) += pmic_hi6553.o
-obj-$(CONFIG_POWER_PM8916) += pmic_pm8916.o

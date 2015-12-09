@@ -3,15 +3,12 @@
  *
  * (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
  *
- * Based on Linux/Little-Kernel driver
- *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
 #include <dm.h>
 #include <asm/gpio.h>
-#include <asm/arch/sysmap.h>
 #include <asm/io.h>
 #include <errno.h>
 

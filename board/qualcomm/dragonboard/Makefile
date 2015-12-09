@@ -1,6 +1,5 @@
 #
-# (C) Copyright 2000-2004
-# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+# (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
 #
 # SPDX-License-Identifier:	GPL-2.0+
 #

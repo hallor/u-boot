@@ -10,7 +10,6 @@
  */
 
 #include <asm/io.h>
-#include <asm/arch/sysmap.h>
 #include <common.h>
 #include <dm.h>
 #include <clk.h>
@@ -147,7 +146,7 @@ static const struct dm_serial_ops msm_serial_ops = {
 static int msm_uart_clk_init(struct udevice *dev)
 {
 	uint clk_rate = fdtdec_get_uint(gd->fdt_blob, dev->of_offset, "clock-frequency", 115200);
-	uint clkd[2]; // clk_id and clk_no
+	uint clkd[2]; /* clk_id and clk_no */
 	fdtdec_get_int_array(gd->fdt_blob, dev->of_offset, "clock", clkd, 2);
 	clkd[0] = fdt_node_offset_by_phandle(gd->fdt_blob, clkd[0]);
 

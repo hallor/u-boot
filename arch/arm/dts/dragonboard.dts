@@ -51,6 +51,7 @@
 			gpio-controller;
 			gpio-count = <122>;
 			gpio-bank-name="soc";
+			#gpio-cells = <1>;
 		};
 
 		ehci@78d9000 {
@@ -82,16 +83,18 @@
 			reg = <0x200f000 0x1000 0x2400000 0x400000 0x2c00000 0x400000 0x3800000 0x200000 0x200a000 0x2100>;
 			reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
 			#address-cells = <0x1>;
-			#size-cells = <0x0>;
+			#size-cells = <0x1>;
 			pm8916@0 {
 				compatible = "qcom,spmi-pmic";
-				reg = <0x0>;
+				reg = <0x0 0x2>;
 				#address-cells = <0x1>;
-				#size-cells = <0x0>;
+				#size-cells = <0x1>;
 
-				pwrkey@800 {
-					compatible = "qcom,pm8941-pwrkey";
-					reg = <0x800>;
+				pmic_pon: pon@800 {
+					compatible = "qcom,pm8916-pwrkey";
+					reg = <0x800 0x96>;
+					#gpio-cells = <2>;
+					gpio-controller;
 				};
 
 				pmic_gpios: gpios@c000 {
@@ -99,16 +102,8 @@
 					reg = <0xc000 0x400>;
 					gpio-controller;
 					gpio-count = <4>;
+					#gpio-cells = <2>;
 					gpio-bank-name="pmic";
-
-					usb_hub_reset_n_pm {
-						gpios = <&pmic_gpios 2 0>;
-					};
-
-					usb_sw_sel_pm {
-						gpios = <&pmic_gpios 3 0>;
-					};
-
 				};
 			};
 
@@ -142,5 +137,21 @@
 			label = "green:user4";
 			gpios = <&pmic_gpios 1 0>;
 		};
+	};
+
+	usb_hub_reset_n_pm {
+		gpios = <&pmic_gpios 2 0>;
+	};
+
+	usb_sw_sel_pm {
+		gpios = <&pmic_gpios 3 0>;
+	};
+
+	key_vol_down {
+		gpios = <&pmic_pon 1 0>;
+	};
+
+	key_power {
+		gpios = <&pmic_pon 0 0>;
 	};
 };

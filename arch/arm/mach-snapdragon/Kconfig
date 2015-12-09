@@ -2,14 +2,10 @@ if ARCH_SNAPDRAGON
 
 choice
 	prompt "Snapdragon board select"
-	optional
 
 config TARGET_DRAGONBOARD
 	bool "96Boards Dragonboard 410C"
 endchoice
-
-config SYS_VENDOR
-        default "qualcomm"
 
 config SYS_SOC
 	default "snapdragon"

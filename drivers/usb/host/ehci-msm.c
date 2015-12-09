@@ -60,8 +60,9 @@ struct msm_ehci_priv {
 	u32 ulpi_port;
 };
 
-void __weak board_prepare_usb(enum usb_init_type type)
+int __weak board_prepare_usb(enum usb_init_type type)
 {
+	return 0;
 }
 
 static void setup_usb_phy(struct msm_ehci_priv *priv)
@@ -125,12 +126,16 @@ static int ehci_usb_probe(struct udevice *dev)
 	struct msm_ehci_priv *p = dev_get_priv(dev);
 	struct ehci_hccr *cr;
 	struct ehci_hcor *or;
+	int ret;
 
 	cr = (struct ehci_hccr *)p->ehci_base;
 	or = (struct ehci_hcor *)(p->ehci_base +
 				  HC_LENGTH(readl(p->ehci_base)));
 
-	board_prepare_usb(USB_INIT_HOST);
+	ret = board_prepare_usb(USB_INIT_HOST);
+	if (ret < 0)
+	    return ret;
+
 
 	return ehci_register(dev, cr, or, &msm_ehci_ops, 0, USB_INIT_HOST);
 }
@@ -150,7 +155,9 @@ static int ehci_usb_remove(struct udevice *dev)
 
 	reset_usb_phy(p);
 
-	board_prepare_usb(USB_INIT_DEVICE); /* Board specific hook */
+	ret = board_prepare_usb(USB_INIT_DEVICE); /* Board specific hook */
+	if (ret < 0)
+	    return ret;
 
 	/* Reset controller */
 	writel(0x00080002, reg); /* reset usb */

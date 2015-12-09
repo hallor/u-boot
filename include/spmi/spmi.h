@@ -1,5 +1,5 @@
-#ifndef SPMI_H
-#define SPMI_H
+#ifndef _SPMI_SPMI_H
+#define _SPMI_SPMI_H
 
 /**
  * struct dm_spmi_ops - SPMI device I/O interface
@@ -40,5 +40,5 @@ int spmi_reg_read(struct udevice *dev, int usid, int pid, int reg);
 int spmi_reg_write(struct udevice *dev, int usid, int pid, int reg,
 		   uint8_t value);
 
-#endif // SPMI_H
+#endif
 

@@ -52,6 +52,8 @@ source "drivers/remoteproc/Kconfig"
 
 source "drivers/rtc/Kconfig"
 
+source "drivers/spmi/Kconfig"
+
 source "drivers/serial/Kconfig"
 
 source "drivers/sound/Kconfig"

@@ -68,8 +68,8 @@ config USB_EHCI_MX6
 
 config USB_EHCI_MSM
 	bool "Support for Qualcomm on-chip EHCI USB controller"
-	depends on ARCH_SNAPDRAGON
-	default y
+	depends on DM_USB
+	default n
 	---help---
 	  Enables support for the on-chip EHCI controller on Qualcomm
 	  Snapdragon SoCs.

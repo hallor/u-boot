@@ -1,5 +1,5 @@
 /*
- * Qualcomm pm8916 pmic gpio driver - part of qualcomm PMICs
+ * Qualcomm pm8916 pmic gpio driver - part of Qualcomm PM8916 PMIC
  *
  * (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
  *
@@ -251,12 +251,14 @@ static int pm8941_pwrkey_get_function(struct udevice *dev, unsigned offset)
 
 static int pm8941_pwrkey_get_value(struct udevice *dev, unsigned offset)
 {
-	int reg = pmic_reg_read(dev->parent, dev->priv + PON_INT_RT_STS);
+	struct pm8916_gpio_bank *priv = dev_get_priv(dev);
+
+	int reg = pmic_reg_read(dev->parent, priv->pid + PON_INT_RT_STS);
 
 	if (reg < 0)
 		return 0;
 
-	switch(offset) {
+	switch (offset) {
 	case 0: /* Power button */
 		return ((reg & BIT(KPDPWR_ON_INT_BIT)) != 0);
 		break;
@@ -274,7 +276,9 @@ static const struct dm_gpio_ops pm8941_pwrkey_ops = {
 
 static int pm8941_pwrkey_probe(struct udevice *dev)
 {
-	dev->priv = dev_get_addr(dev);
+	struct pm8916_gpio_bank *priv = dev_get_priv(dev);
+
+	priv->pid = dev_get_addr(dev);
 	return 0;
 }
 
@@ -287,15 +291,16 @@ static int pm8941_pwrkey_ofdata_to_platdata(struct udevice *dev)
 }
 
 static const struct udevice_id pm8941_pwrkey_ids[] = {
-	{ .compatible = "qcom,pm8941-pwrkey" },
+	{ .compatible = "qcom,pm8916-pwrkey" },
 	{ }
 };
 
 U_BOOT_DRIVER(pwrkey_pm8941) = {
-	.name	= "pwrkey_pm8941",
+	.name	= "pwrkey_pm8916",
 	.id	= UCLASS_GPIO,
 	.of_match = pm8941_pwrkey_ids,
 	.ofdata_to_platdata = pm8941_pwrkey_ofdata_to_platdata,
 	.probe	= pm8941_pwrkey_probe,
 	.ops	= &pm8941_pwrkey_ops,
+	.priv_auto_alloc_size = sizeof(struct pm8916_gpio_bank),
 };

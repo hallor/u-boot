@@ -1,15 +1,14 @@
 /*
- * Qualcomm SDHCI driver
+ * Qualcomm SDHCI driver - SD/eMMC controller
  *
  * (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
  *
- * Based on Linux/Little-Kernel driver
+ * Based on Linux driver
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <asm/io.h>
-#include <asm/arch/sysmap.h>
 #include <common.h>
 #include <dm.h>
 #include <linux/bitops.h>
@@ -44,8 +43,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 static int msm_sdc_clk_init(struct udevice *dev)
 {
-	uint clk_rate = fdtdec_get_uint(gd->fdt_blob, dev->of_offset, "clock-frequency", 400000);
-	uint clkd[2]; // clk_id and clk_no
+	uint clk_rate = fdtdec_get_uint(gd->fdt_blob, dev->of_offset,
+					"clock-frequency", 400000);
+	uint clkd[2]; /* clk_id and clk_no */
 	fdtdec_get_int_array(gd->fdt_blob, dev->of_offset, "clock", clkd, 2);
 	clkd[0] = fdt_node_offset_by_phandle(gd->fdt_blob, clkd[0]);
 

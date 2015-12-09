@@ -53,6 +53,7 @@ obj-y += pcmcia/
 obj-y += dfu/
 obj-y += rtc/
 obj-y += sound/
+obj-y += spmi/
 obj-y += timer/
 obj-y += tpm/
 obj-y += twserial/
@@ -67,6 +68,5 @@ obj-y += input/
 obj-y += soc/
 obj-$(CONFIG_REMOTEPROC) += remoteproc/
 obj-y += thermal/
-obj-y += spmi/
 
 endif

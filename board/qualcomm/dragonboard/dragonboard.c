@@ -27,12 +27,37 @@ void dram_init_banksize(void)
 
 static struct gpio_desc hub_reset, usb_sel;
 
-void board_prepare_usb(enum usb_init_type type)
+int board_prepare_usb(enum usb_init_type type)
 {
-	if (!dm_gpio_is_valid(&hub_reset) ||
-	    !dm_gpio_is_valid(&usb_sel)) {
-		printf("USB gpio not ready.\n");
-		return;
+	int ret = 0, node;
+
+	/* Try to request gpios needed to start usb host on dragonboard */
+	if (!dm_gpio_is_valid(&hub_reset)) {
+		node = fdt_subnode_offset(gd->fdt_blob, 0, "usb_hub_reset_n_pm");
+		if (node < 0) {
+			printf("Failed to find usb_hub_reset_n_pm dt node.\n");
+			return node;
+		}
+		ret = gpio_request_by_name_nodev(gd->fdt_blob, node, "gpios", 0,
+						 &hub_reset, 0);
+		if (ret< 0 ) {
+			printf("Failed to request usb_hub_reset_n_pm gpio.\n");
+			return ret;
+		}
+	}
+
+	if (!dm_gpio_is_valid(&usb_sel)) {
+		node = fdt_subnode_offset(gd->fdt_blob, 0, "usb_sw_sel_pm");
+		if (node < 0) {
+			printf("Failed to find usb_sw_sel_pm dt node.\n");
+			return 0;
+		}
+		ret = gpio_request_by_name_nodev(gd->fdt_blob, node, "gpios", 0,
+						 &usb_sel, 0);
+		if (ret < 0) {
+			printf("Failed to request usb_sw_sel_pm gpio.\n");
+			return ret;
+		}
 	}
 
 	if (type == USB_INIT_HOST) {
@@ -48,54 +73,36 @@ void board_prepare_usb(enum usb_init_type type)
 		/* Switch back to device connector */
 		dm_gpio_set_dir_flags(&usb_sel, GPIOD_IS_OUT);
 	}
+	return 0;
 }
 
 int board_init(void)
 {
-	int ret;
-
-	ret = dm_gpio_lookup_name("pmic2", &hub_reset);
-	if (ret < 0) {
-		printf("Failed to lookup pmic2 gpio\n");
-		return 0;
-	}
-
-	ret = dm_gpio_lookup_name("pmic3", &usb_sel);
-	if (ret < 0) {
-		printf("Failed to lookup pmic3 gpio\n");
-		return 0;
-	}
-
-	ret = dm_gpio_request(&hub_reset, "hub_reset");
-	if (ret < 0) {
-		printf("Failed to request hub_reset gpio\n");
-		return 0;
-	}
-
-	ret = dm_gpio_request(&usb_sel, "usb_sel");
-	if (ret < 0) {
-		printf("Failed to request usb_sel gpio\n");
-		return 0;
-	}
 	return 0;
 }
 
+/* Check for vol- button - if pressed - stop autoboot */
 int misc_init_r(void)
 {
-	int ret;
+	int node;
 	struct gpio_desc resin;
 
-	ret = dm_gpio_lookup_name("pm8916_key1", &resin);
-	if (ret < 0)
+	node = fdt_subnode_offset(gd->fdt_blob, 0, "key_vol_down");
+	if (node < 0) {
+		printf("Failed to find key_vol_down node. Check device tree\n");
 		return 0;
+	}
 
-	ret = dm_gpio_request(&resin, "key_resin");
-	if (ret < 0)
+	if (gpio_request_by_name_nodev(gd->fdt_blob, node, "gpios", 0, &resin,
+				       0)) {
+		printf("Failed to request key_vol_down button.\n");
 		return 0;
+	}
 
 	if (dm_gpio_get_value(&resin)) {
 		setenv("bootdelay", "-1");
 		printf("Power button pressed - dropping to console.\n");
 	}
+
 	return 0;
 }

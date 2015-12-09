@@ -10,7 +10,7 @@
 #define __DRAGONBOARD_H
 
 #include <linux/sizes.h>
-#include <asm/arch/sysmap.h>
+#include <asm/arch/sysmap-apq8016.h>
 
 #define CONFIG_IDENT_STRING		"\nQualcomm-DragonBoard 410C"
 
@@ -30,66 +30,25 @@
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x80000)
 #define CONFIG_SYS_BOOTM_LEN		0x1000000 /* 16MB max kernel size */
 
-/* Peripherals */
-#define CONFIG_DM /* Use Device Model */
-
 /* UART */
-#define CONFIG_MSM_SERIAL
 #define CONFIG_BAUDRATE			115200
 
 /* Generic Timer Definitions */
 #define COUNTER_FREQUENCY		19000000
 
-/* SD/eMMC controller - SDHCI */
-#define CONFIG_SDHCI
-#define CONFIG_MSM_SDHCI
-
 /* This are needed to have proper mmc support */
 #define CONFIG_MMC
-#define CONFIG_DM_MMC
 #define CONFIG_GENERIC_MMC
+#define CONFIG_SDHCI
 
 #define CONFIG_SYS_LDSCRIPT "board/qualcomm/dragonboard/u-boot.lds"
 
-#define CONFIG_CLK
-/* Serial */
-/*
-*/
-#define CONFIG_DM_SERIAL
-#define CONFIG_DM_STDIO
-#define CONFIG_SYS_MALLOC_F
-#define CONFIG_SYS_MALLOC_F_LEN 0x2000
-/* GPIO */
-#define CONFIG_DM_GPIO
-#define CONFIG_MSM_GPIO
-
-/* PMIC */
-#define CONFIG_POWER_PM8916
-#define CONFIG_DM_PMIC
-
-/* Reset controller */
-#define CONFIG_RESET
-
-/* SOC bus */
-#define CONFIG_SIMPLE_BUS
-
-/* Status led */
-#define CONFIG_LED
-#define CONFIG_LED_GPIO
-
-/* Needed for proper usb removal */
-#define CONFIG_DM_DEVICE_REMOVE
-
-/* USB */
-#define CONFIG_DM_USB  /* Requires fdt binding */
-#define CONFIG_USB_EHCI /* Host controller is EHCI */
-#define CONFIG_USB_EHCI_MSM /* MSM flavour */
-#define CONFIG_USB_ULPI_VIEWPORT /* ULPI is used to talk with USB phy */
 /* Fixup - in init code we switch from device to host mode,
  * it has to be done after each HCD reset */
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
+/* Needed for Host Controller driver */
+#define CONFIG_USB_ULPI_VIEWPORT
 
-#define CONFIG_USB_STORAGE /* Enable USB Storage */
 #define CONFIG_USB_HOST_ETHER /* Enable USB Networking */
 
 /* Support all possible USB ethernet dongles */
@@ -121,10 +80,8 @@
 #define CONFIG_CMD_TFTP
 #define CONFIG_CMD_TIMER
 #define CONFIG_CMD_UNZIP
-#define CONFIG_CMD_USB
 #define CONFIG_CMD_BOOTZ
 #define CONFIG_CMD_BOOTI
-#define CONFIG_CMD_DM
 
 /* Command line configuration */
 #define CONFIG_MENU
@@ -136,22 +93,14 @@
 #define CONFIG_EFI_PARTITION
 #define CONFIG_PARTITION_UUIDS
 
-/* Support FIT images */
-#define CONFIG_FIT
-
 /* BOOTP options */
 #define CONFIG_BOOTP_BOOTFILESIZE
 
 /* Environment - Boot*/
-#define CONFIG_BOOTDELAY		-1	/* autoboot after 5 seconds */
+#define CONFIG_BOOTDELAY		2	/* autoboot after 2 seconds */
 
-#define CONFIG_SERVERIP	10.0.0.1
-#define CONFIG_IPADDR	10.0.0.2
-#define CONFIG_NETMASK	255.255.255.0
 #define CONFIG_NFSBOOTCOMMAND ""
-#define CONFIG_ROOTPATH "/home/nfs/dragonboard"
-#define CONFIG_BOOTFILE "dragonboard/linux.itb"
-#define CONFIG_BOOTCOMMAND "usb start && tftp && usb stop && bootm"
+#define CONFIG_BOOTCOMMAND "usb start && dhcp && tftp && usb stop && bootm"
 #define CONFIG_BOOTARGS "console=ttyMSM0,115200n8"
 
 /* Does what recovery does */
@@ -165,6 +114,7 @@
 #define CONFIG_ENV_REFLASH \
 "mmc dev 0 &&"\
 "usb start &&"\
+"dhcp &&"\
 "tftp $loadaddr dragonboard/rescue/gpt_both0.bin && "\
 "mmc write $loadaddr 0 43 &&" \
 "mmc rescan &&"\
@@ -182,6 +132,7 @@ REFLASH(dragonboard/u-boot.img, 8)\
 #define CONFIG_UBOOT_REFLASH \
 "mmc dev 0 &&"\
 "usb start &&"\
+"dhcp &&"\
 "part start mmc 0 8 start && "\
 "setenv size 0x800  &&"\
 "tftp $loadaddr dragonboard/u-boot.img &&" \
@@ -213,7 +164,7 @@ REFLASH(dragonboard/u-boot.img, 8)\
 		  "booti $linux_addr $ramdisk_addr $fdt_addr\0"
 
 #define CONFIG_ENV_IS_NOWHERE
-#define CONFIG_ENV_SIZE		0x1000
+#define CONFIG_ENV_SIZE			0x1000
 #define CONFIG_ENV_VARS_UBOOT_CONFIG
 #define CONFIG_SYS_NO_FLASH
 
@@ -224,7 +175,6 @@ REFLASH(dragonboard/u-boot.img, 8)\
 #define CONFIG_SYS_CBSIZE		512	/* Console I/O Buffer Size */
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
 					sizeof(CONFIG_SYS_PROMPT) + 16)
-#define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CMDLINE_EDITING

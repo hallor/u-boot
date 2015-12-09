@@ -224,7 +224,8 @@ config UNIPHIER_SERIAL
 	  serial ports, say Y to this option. If unsure, say N.
 
 config MSM_SERIAL
-	bool "Support for Qualcomm on-chip UART"
+	bool "Qualcomm on-chip UART"
+	depends on DM_SERIAL
 	help
-	  Support UART on some Qualcomm SoCs.
+	  Support Data Mover UART used on Qualcomm Snapdragon SoCs.
 endmenu

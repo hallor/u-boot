@@ -1,3 +1,9 @@
+#
+# (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
+#
+# SPDX-License-Identifier:	GPL-2.0+
+#
+
 Build & Run instructions:
 
 1) Install mkbootimg from git://codeaurora.org/quic/kernel/skales (15ece94f09 worked for me)

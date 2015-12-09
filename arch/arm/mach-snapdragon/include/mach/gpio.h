@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#ifndef _ASM_ARCH_GPIO_H
-#define _ASM_ARCH_GPIO_H
+#ifndef _MACH_GPIO_H
+#define _MACH_GPIO_H
 
 /* Register offsets */
 #define GPIO_CONFIG_OFF(no)         ((no)*0x1000)
