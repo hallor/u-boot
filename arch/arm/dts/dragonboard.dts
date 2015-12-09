@@ -26,63 +26,18 @@
 		ranges = <0x0 0x0 0x0 0xffffffff>;
 		compatible = "simple-bus";
 
-		qcom,gcc@1800000 {
+		clkc: qcom,gcc@1800000 {
 			compatible = "qcom,gcc-msm8916";
 			reg = <0x1800000 0x80000>;
 			#address-cells = <0x1>;
 			#size-cells = <0x0>;
-
-			gpll0: gpll@2101c {
-				compatible = "qcom,gcc-msm8916,gpll";
-				reg = <0x2101C>; /* status */
-				vote = <0x45000 0>; /* vote reg, bit */
-			};
-
-			clk_uart2_iface: cbc@1008 {
-				compatible = "qcom,gcc-msm8916,cbc";
-				reg = <0x1008>; /* CBCR */
-			};
-
-			clk_uart2_apps: rcg@302c {
-				compatible = "qcom,gcc-msm8916,rcg";
-				/* CBCR, CMD, CFG, M, N, D*/
-				reg = <0x302C 0x3034 0x3038 0x303C 0x3040 0x3044>;
-				rate = <1 144 15625>; /* div, m, n */
-				clocls = <&gpll0>;
-			};
-
-			clk_sdc1_iface: cbc@4101c {
-				compatible = "qcom,gcc-msm8916,cbc";
-				reg = <0x4101C>; /* CBCR */
-			};
-
-			clk_sdc1_apps: rcg@0x41018 {
-				compatible = "qcom,gcc-msm8916,rcg";
-				/* CBCR, CMD, CFG, M, N, D*/
-				reg = <0x41018 0x41004 0x41008 0x4100C 0x41010 0x41014>;
-				rate = <8 0 0>; /* div, m, n */
-				clocls = <&gpll0>;
-			};
-
-			clk_sdc2_iface: cbc@4201c {
-				compatible = "qcom,gcc-msm8916,cbc";
-				reg = <0x4201C>; /* CBCR */
-			};
-
-			clk_sdc2_apps: rcg@0x42018 {
-				compatible = "qcom,gcc-msm8916,rcg";
-				/* CBCR, CMD, CFG, M, N, D*/
-				reg = <0x42018 0x42004 0x42008 0x4200C 0x42010 0x42014>;
-				rate = <4 0 0>; /* div, m, n */
-				clocls = <&gpll0>;
-			};
 		};
 
 		serial@78b0000 {
 			compatible = "qcom,msm-uartdm-v1.4";
 			reg = <0x78b0000 0x200>;
 			u-boot,dm-pre-reloc;
-			clocks = <&clk_uart2_iface>, <&clk_uart2_apps>;
+			clock = <&clkc 4>;
 		};
 
 		restart@4ab000 {
@@ -109,7 +64,8 @@
 			bus-width = <0x8>;
 			index = <0x0>;
 			non-removable;
-			clocks = <&clk_sdc1_iface>, <&clk_sdc1_apps>;
+			clock = <&clkc 0>;
+			clock-frequency = <100000000>;
 		};
 
 		sdhci@07864000 {
@@ -117,7 +73,8 @@
 			reg = <0x7864900 0x11c 0x7864000 0x800>;
 			index = <0x1>;
 			bus-width = <0x4>;
-			clocks = <&clk_sdc2_iface>, <&clk_sdc2_apps>;
+			clock = <&clkc 1>;
+			clock-frequency = <200000000>;
 		};
 
 		spmi@200f000 {

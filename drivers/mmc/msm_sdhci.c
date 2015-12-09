@@ -14,6 +14,7 @@
 #include <dm.h>
 #include <linux/bitops.h>
 #include <sdhci.h>
+#include <clk.h>
 
 /* Non-standard registers needed for SDHCI startup */
 #define SDCC_MCI_POWER   0x0
@@ -41,7 +42,20 @@ struct msm_sdhc {
 
 DECLARE_GLOBAL_DATA_PTR;
 
-int clk_init_sdc(int slot);
+static int msm_sdc_clk_init(struct udevice *dev)
+{
+	uint clk_rate = fdtdec_get_uint(gd->fdt_blob, dev->of_offset, "clock-frequency", 400000);
+	uint clkd[2]; // clk_id and clk_no
+	fdtdec_get_int_array(gd->fdt_blob, dev->of_offset, "clock", clkd, 2);
+	clkd[0] = fdt_node_offset_by_phandle(gd->fdt_blob, clkd[0]);
+
+	struct udevice *clk = NULL;
+	uclass_get_device_by_of_offset(UCLASS_CLK, clkd[0], &clk);
+	if (clk) {
+		clk_set_periph_rate(clk, clkd[1], clk_rate);
+	}
+	return 0;
+}
 
 static int msm_sdc_probe(struct udevice *dev)
 {
@@ -51,8 +65,9 @@ static int msm_sdc_probe(struct udevice *dev)
 
 	host->quirks = SDHCI_QUIRK_WAIT_SEND_CMD | SDHCI_QUIRK_BROKEN_R1B;
 
-	if (clk_init_sdc(host->index))
-		return -1;
+	/* Init clocks */
+	if (msm_sdc_clk_init(dev))
+		return -EIO;
 
 	/* Reset the core and Enable SDHC mode */
 	writel(readl(prv->base + SDCC_MCI_POWER) | SDCC_MCI_POWER_SW_RST,

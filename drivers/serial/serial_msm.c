@@ -13,6 +13,7 @@
 #include <asm/arch/sysmap.h>
 #include <common.h>
 #include <dm.h>
+#include <clk.h>
 #include <errno.h>
 #include <linux/compiler.h>
 #include <serial.h>
@@ -143,11 +144,26 @@ static const struct dm_serial_ops msm_serial_ops = {
 	.getc = msm_serial_getc,
 };
 
-int clk_init_uart(void);
+static int msm_uart_clk_init(struct udevice *dev)
+{
+	uint clk_rate = fdtdec_get_uint(gd->fdt_blob, dev->of_offset, "clock-frequency", 115200);
+	uint clkd[2]; // clk_id and clk_no
+	fdtdec_get_int_array(gd->fdt_blob, dev->of_offset, "clock", clkd, 2);
+	clkd[0] = fdt_node_offset_by_phandle(gd->fdt_blob, clkd[0]);
+
+	struct udevice *clk = NULL;
+	uclass_get_device_by_of_offset(UCLASS_CLK, clkd[0], &clk);
+	if (clk) {
+		clk_set_periph_rate(clk, clkd[1], clk_rate);
+	}
+	return 0;
+}
+
 static int msm_serial_probe(struct udevice *dev)
 {
 	struct msm_serial_data *p = dev_get_priv(dev);
-	clk_init_uart();
+
+	msm_uart_clk_init(dev);
 
 	if (readl(p->base + UARTDM_SR) & UARTDM_SR_UART_OVERRUN)
 		writel(UARTDM_CR_CMD_RESET_ERR, p->base + UARTDM_CR);

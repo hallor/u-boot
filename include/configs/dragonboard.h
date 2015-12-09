@@ -51,6 +51,7 @@
 
 #define CONFIG_SYS_LDSCRIPT "board/qualcomm/dragonboard/u-boot.lds"
 
+#define CONFIG_CLK
 /* Serial */
 /*
 */
