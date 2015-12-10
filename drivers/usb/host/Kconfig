@@ -66,6 +66,14 @@ config USB_EHCI_MX6
 	---help---
 	  Enables support for the on-chip EHCI controller on i.MX6 SoCs.
 
+config USB_EHCI_MSM
+	bool "Support for Qualcomm on-chip EHCI USB controller"
+	depends on DM_USB
+	default n
+	---help---
+	  Enables support for the on-chip EHCI controller on Qualcomm
+	  Snapdragon SoCs.
+
 config USB_EHCI_UNIPHIER
 	bool "Support for UniPhier on-chip EHCI USB controller"
 	depends on ARCH_UNIPHIER && OF_CONTROL
