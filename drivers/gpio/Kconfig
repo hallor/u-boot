@@ -53,6 +53,13 @@ config MSM_GPIO
 	help
 	  Support GPIO controllers on Qualcomm Snapdragon family of SoCs.
 
+config PM8916_GPIO
+	bool "Qualcomm PM8916 PMIC GPIO/keypad driver"
+	depends on DM_GPIO && PMIC_PM8916
+	help
+	  Support for GPIO1-GPIO4 pins and power/reset buttons found on
+	  Qualcomm PM8916 PMIC.
+
 config ROCKCHIP_GPIO
 	bool "Rockchip GPIO driver"
 	depends on DM_GPIO
