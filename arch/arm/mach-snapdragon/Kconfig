@@ -3,4 +3,13 @@ if ARCH_SNAPDRAGON
 config SYS_SOC
 	default "snapdragon"
 
+choice
+	prompt "Snapdragon board select"
+
+config TARGET_DRAGONBOARD410C
+	bool "96Boards Dragonboard 410C"
+endchoice
+
+source "board/qualcomm/dragonboard410c/Kconfig"
+
 endif
