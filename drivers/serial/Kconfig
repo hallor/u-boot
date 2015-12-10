@@ -223,4 +223,9 @@ config UNIPHIER_SERIAL
 	  If you have a UniPhier based board and want to use the on-chip
 	  serial ports, say Y to this option. If unsure, say N.
 
+config MSM_SERIAL
+	bool "Qualcomm on-chip UART"
+	depends on DM_SERIAL
+	help
+	  Support Data Mover UART used on Qualcomm Snapdragon SoCs.
 endmenu
