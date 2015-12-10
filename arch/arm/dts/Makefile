@@ -95,6 +95,8 @@ dtb-$(CONFIG_FSL_LSCH3) += fsl-ls2080a-qds.dtb \
 dtb-$(CONFIG_FSL_LSCH2) += fsl-ls1043a-qds.dtb \
 	fsl-ls1043a-rdb.dtb
 
+dtb-$(CONFIG_ARCH_SNAPDRAGON) += dragonboard410c.dtb
+
 dtb-$(CONFIG_MACH_SUN4I) += \
 	sun4i-a10-a1000.dtb \
 	sun4i-a10-ba10-tvbox.dtb \
