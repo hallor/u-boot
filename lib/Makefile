@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:	GPL-2.0+
 #
-
+obj-y += test.o
 ifndef CONFIG_SPL_BUILD
 
 obj-$(CONFIG_EFI) += efi/
