@@ -1,0 +1,10 @@
+comment "ULPI drivers"
+
+config USB_ULPI
+	bool
+
+config USB_ULPI_VIEWPORT
+	bool
+
+config USB_ULPI_VIEWPORT_OMAP
+	bool
