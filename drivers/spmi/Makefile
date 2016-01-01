@@ -6,3 +6,4 @@
 
 obj-$(CONFIG_DM_SPMI)  += spmi-uclass.o
 obj-$(CONFIG_SPMI_MSM) += spmi-msm.o
+obj-$(CONFIG_SPMI_SANDBOX) += spmi-sandbox.o

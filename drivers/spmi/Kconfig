@@ -13,4 +13,11 @@ config SPMI_MSM
 	depends on DM_SPMI
 	---help---
 	Support SPMI implementation found on Qualcomm Snapdragon SoCs.
+
+config SPMI_SANDBOX
+	boolean "Support for Sandbox SPMI bus"
+	depends on DM_SPMI
+	---help---
+	Demo SPMI bus implementation. Implements single slave/peripheral.
+
 endmenu
