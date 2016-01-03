@@ -20,6 +20,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define REG_OFFSET(x)          ((x) * 0x100)
 
 /* Register maps */
+
+/* Type and subtype are shared for all pm8916 peripherals */
+#define REG_TYPE               0x4
+#define REG_SUBTYPE            0x5
+
 #define REG_STATUS             0x08
 #define REG_STATUS_VAL_MASK    0x1
 
@@ -168,10 +173,20 @@ static const struct dm_gpio_ops pm8916_gpio_ops = {
 static int pm8916_gpio_probe(struct udevice *dev)
 {
 	struct pm8916_gpio_bank *priv = dev_get_priv(dev);
+	int reg;
 
 	priv->pid = dev_get_addr(dev);
 	if (priv->pid == FDT_ADDR_T_NONE)
 		return -EINVAL;
+
+	/* Do a sanity check */
+	reg = pmic_reg_read(dev->parent, priv->pid + REG_TYPE);
+	if (reg != 0x10)
+		return -ENODEV;
+
+	reg = pmic_reg_read(dev->parent, priv->pid + REG_SUBTYPE);
+	if (reg != 0x5)
+		return -ENODEV;
 
 	return 0;
 }
@@ -244,10 +259,20 @@ static const struct dm_gpio_ops pm8941_pwrkey_ops = {
 static int pm8941_pwrkey_probe(struct udevice *dev)
 {
 	struct pm8916_gpio_bank *priv = dev_get_priv(dev);
+	int reg;
 
 	priv->pid = dev_get_addr(dev);
 	if (priv->pid == FDT_ADDR_T_NONE)
 		return -EINVAL;
+
+	/* Do a sanity check */
+	reg = pmic_reg_read(dev->parent, priv->pid + REG_TYPE);
+	if (reg != 0x1)
+		return -ENODEV;
+
+	reg = pmic_reg_read(dev->parent, priv->pid + REG_SUBTYPE);
+	if (reg != 0x1)
+		return -ENODEV;
 
 	return 0;
 }
