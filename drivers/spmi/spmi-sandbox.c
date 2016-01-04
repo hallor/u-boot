@@ -1,116 +1,111 @@
 /*
  * Sample SPMI bus driver
  *
+ * It emulates bus with single pm8916-like pmic that has only GPIO reigsters.
+ *
  * (C) Copyright 2015 Mateusz Kulikowski <mateusz.kulikowski@gmail.com>
  *
- * Loosely based on Little Kernel driver
- *
- * SPDX-License-Identifier:	BSD-3-Clause
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
-#include <asm/io.h>
-#include <fdtdec.h>
-#include <errno.h>
 #include <dm.h>
+#include <errno.h>
 #include <spmi/spmi.h>
+#include <asm/gpio.h>
+#include <asm/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-struct msm_spmi_priv {
-	phys_addr_t arb_core; /* ARB Core base */
-	phys_addr_t spmi_core; /* SPMI core */
-	phys_addr_t spmi_obs; /* SPMI observer */
-	/* SPMI channel map */
-	uint8_t channel_map[SPMI_MAX_SLAVES][SPMI_MAX_PERIPH];
+#define EMUL_GPIO_PID_START 0xC0
+#define EMUL_GPIO_PID_END   0xC3
+
+#define EMUL_GPIO_COUNT 4
+
+#define EMUL_GPIO_REG_END 0x46 /* Last valid register */
+
+#define EMUL_PERM_R 0x1
+#define EMUL_PERM_W 0x2
+#define EMUL_PERM_RW (EMUL_PERM_R | EMUL_PERM_W)
+
+struct sandbox_emul_fake_regs {
+	u8 value;
+	u8 access_mask;
+	u8 perms; /* Access permissions */
 };
 
-static int msm_spmi_write(struct udevice *dev, int usid, int pid, int off,
+struct sandbox_emul_gpio {
+	struct sandbox_emul_fake_regs r[EMUL_GPIO_REG_END]; /* Fake registers */
+};
+
+struct sandbox_spmi_priv {
+	struct sandbox_emul_gpio gpios[EMUL_GPIO_COUNT];
+};
+
+/* Check if valid register was requested */
+static bool check_address_valid(int usid, int pid, int off)
+{
+	if (usid != 0)
+		return false;
+	if (pid < EMUL_GPIO_PID_START || pid > EMUL_GPIO_PID_END)
+		return false;
+	if (off > EMUL_GPIO_REG_END)
+		return false;
+	return true;
+}
+
+static int sandbox_spmi_write(struct udevice *dev, int usid, int pid, int off,
 			  uint8_t val)
 {
-	struct msm_spmi_priv *p = dev_get_priv(dev);
-	unsigned channel;
-	uint32_t reg = 0;
+	struct sandbox_spmi_priv *p = dev_get_priv(dev);
+	struct sandbox_emul_fake_regs *r;
 
-	if (usid >= SPMI_MAX_SLAVES)
-		return -EIO;
-	if (pid >= SPMI_MAX_PERIPH)
+	if (!check_address_valid(usid, pid, off))
 		return -EIO;
 
-	channel = p->channel_map[usid][pid];
+	r = p->gpios[pid & 0x3].r; /* Last 3 bits of pid are gpio # */
 
-	/* Disable IRQ mode for the current channel*/
-	writel(0x0, p->spmi_core + SPMI_CH_OFFSET(channel) + SPMI_REG_CONFIG);
-
-	/* Write single byte */
-	writel(val, p->spmi_core + SPMI_CH_OFFSET(channel) + SPMI_REG_WDATA);
-
-	/* Prepare write command */
-	reg |= SPMI_CMD_EXT_REG_WRITE_LONG << SPMI_CMD_OPCODE_SHIFT;
-	reg |= (usid << SPMI_CMD_SLAVE_ID_SHIFT);
-	reg |= (pid << SPMI_CMD_ADDR_SHIFT);
-	reg |= (off << SPMI_CMD_ADDR_OFFSET_SHIFT);
-	reg |= 1; /* byte count */
-
-	/* Send write command */
-	writel(reg, p->spmi_core + SPMI_CH_OFFSET(channel) + SPMI_REG_CMD0);
-
-	/* Wait till CMD DONE status */
-	reg = 0;
-	while (!reg) {
-		reg = readl(p->spmi_core + SPMI_CH_OFFSET(channel) +
-			    SPMI_REG_STATUS);
+	switch(off)
+	{
+	case 0x40: /* Control */
+		val &= r[off].access_mask;
+		if (((val & 0x30) == 0x10) || ((val & 0x30) == 0x20)) {
+			/* out/inout - set status register */
+			r[0x8].value &= ~0x1;
+			r[0x8].value |= val & 0x1;
+		}
+	default:
+		if (r[off].perms & EMUL_PERM_W)
+			r[off].value = val & r[off].access_mask;
 	}
-
-	if (reg ^ SPMI_STATUS_DONE) {
-		printf("SPMI write failure.\n");
-		return -EIO;
-	}
-
 	return 0;
 }
 
-static int msm_spmi_read(struct udevice *dev, int usid, int pid, int off)
+static int sandbox_spmi_read(struct udevice *dev, int usid, int pid, int off)
 {
-	struct msm_spmi_priv *p = dev_get_priv(dev);
-	unsigned channel;
-	uint32_t reg = 0;
+	struct sandbox_spmi_priv *p = dev_get_priv(dev);
+	struct sandbox_emul_fake_regs *r;
 
-	if (usid >= SPMI_MAX_SLAVES)
-		return -EIO;
-	if (pid >= SPMI_MAX_PERIPH)
+	if (!check_address_valid(usid, pid, off))
 		return -EIO;
 
-	channel = p->channel_map[usid][pid];
+	r = p->gpios[pid & 0x3].r; /* Last 3 bits of pid are gpio # */
 
-	/* Disable IRQ mode for the current channel*/
-	writel(0x0, p->spmi_obs + SPMI_CH_OFFSET(channel) + SPMI_REG_CONFIG);
+	if (r[0x46].value == 0) /* Block disabled */
+		return 0;
 
-	/* Prepare read command */
-	reg |= SPMI_CMD_EXT_REG_READ_LONG << SPMI_CMD_OPCODE_SHIFT;
-	reg |= (usid << SPMI_CMD_SLAVE_ID_SHIFT);
-	reg |= (pid << SPMI_CMD_ADDR_SHIFT);
-	reg |= (off << SPMI_CMD_ADDR_OFFSET_SHIFT);
-	reg |= 1; /* byte count */
-
-	/* Request read */
-	writel(reg, p->spmi_obs + SPMI_CH_OFFSET(channel) + SPMI_REG_CMD0);
-
-	/* Wait till CMD DONE status */
-	reg = 0;
-	while (!reg) {
-		reg = readl(p->spmi_obs + SPMI_CH_OFFSET(channel) +
-			    SPMI_REG_STATUS);
+	switch(off)
+	{
+	case 0x8: /* Status */
+		if (r[0x46].value == 0) /* Block disabled */
+			return 0;
+		return r[off].value;
+	default:
+		if (r[off].perms & EMUL_PERM_R)
+			return r[off].value;
+		else
+			return 0;
 	}
-
-	if (reg ^ SPMI_STATUS_DONE) {
-		printf("SPMI read failure.\n");
-		return -EIO;
-	}
-
-	/* Read the data */
-	return readl(p->spmi_obs + SPMI_CH_OFFSET(channel) + SPMI_REG_RDATA) &
-			0xFF;
 }
 
 static struct dm_spmi_ops sandbox_spmi_ops = {
@@ -120,31 +115,35 @@ static struct dm_spmi_ops sandbox_spmi_ops = {
 
 static int sandbox_spmi_probe(struct udevice *dev)
 {
-	struct msm_spmi_priv *priv = dev_get_priv(dev);
+	struct sandbox_spmi_priv *p = dev_get_priv(dev);
 	int i;
 
-	priv->arb_core = dev_get_addr(dev);
-	priv->spmi_core = fdtdec_get_addr_size_auto_parent(gd->fdt_blob,
-							   dev->parent->of_offset,
-							   dev->of_offset, "reg",
-							   1, NULL);
-	priv->spmi_obs = fdtdec_get_addr_size_auto_parent(gd->fdt_blob,
-							  dev->parent->of_offset,
-							  dev->of_offset, "reg",
-							  2, NULL);
-
-	/* Scan peripherals connected to each SPMI channel */
-	for (i = 0; i < SPMI_MAX_CHANNELS ; i++) {
-		uint32_t periph = readl(priv->arb_core + ARB_CHANNEL_OFFSET(i));
-		uint8_t slave_id = (periph & 0xf0000) >> 16;
-		uint8_t pid = (periph & 0xff00) >> 8;
-
-		priv->channel_map[slave_id][pid] = i;
+	for (i=0; i<EMUL_GPIO_COUNT; ++i) {
+		struct sandbox_emul_fake_regs *r = p->gpios[i].r;
+		r[4].perms = EMUL_PERM_R;
+		r[4].value = 0x10;
+		r[5].perms = EMUL_PERM_R;
+		r[5].value = 0x5;
+		r[8].access_mask = 0x81;
+		r[8].perms = EMUL_PERM_RW;
+		r[0x40].access_mask = 0x7F;
+		r[0x40].perms = EMUL_PERM_RW;
+		r[0x41].access_mask = 7;
+		r[0x41].perms = EMUL_PERM_RW;
+		r[0x42].access_mask = 7;
+		r[0x42].perms = EMUL_PERM_RW;
+		r[0x42].value = 0x4;
+		r[0x45].access_mask = 0x3F;
+		r[0x45].perms = EMUL_PERM_RW;
+		r[0x45].value = 0x1;
+		r[0x46].access_mask = 0x80;
+		r[0x46].perms = EMUL_PERM_RW;
+		r[0x46].value = 0x80;
 	}
 	return 0;
 }
 
-static const struct udevice_id msm_spmi_ids[] = {
+static const struct udevice_id sandbox_spmi_ids[] = {
 	{ .compatible = "sandbox,spmi" },
 	{ }
 };
